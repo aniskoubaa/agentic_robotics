@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Author: Prof. Anis Koubaa <anis.koubaa@gmail.com>
+# Agentic Robotics — stop a running simulation cleanly.
+#
+# SIGINT first: PX4 flushes its ULog on SIGINT, and SIGKILL truncates it. The
+# ULog is the flight record, so losing it loses the run. Then SIGKILL whatever
+# ignored the polite request.
+set -uo pipefail
+
+# Patterns must match the ACTUAL process, not any shell that happens to mention
+# it. `pgrep -f agr_uav_tools` matches your own terminal if the string appears
+# anywhere on its command line — including the command that invoked agr-stop.
+# Anchor on real executable paths, and filter out this process and its ancestors.
+PATTERNS=(
+  'ros2 launch agr_uav_bringup'
+  'px4_sitl_default/bin/px4'
+  '^gz sim'
+  'ruby .*gz sim'
+  '^MicroXRCEAgent'
+  'lib/agr_uav_tools/vehicle_monitor'
+  'parameter_bridge'
+)
+
+# Everything from $$ up to init — never kill the shell we are running in, nor
+# whatever launched it.
+_ancestors() {
+  local pid=$$
+  while [ -n "$pid" ] && [ "$pid" != "0" ] && [ "$pid" != "1" ]; do
+    echo "$pid"
+    pid="$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')"
+  done
+}
+
+collect() {
+  local p pid; local pids=()
+  local skip; skip="$(_ancestors | tr '\n' ' ')"
+  for p in "${PATTERNS[@]}"; do
+    while read -r pid; do
+      [ -n "$pid" ] || continue
+      case " $skip " in *" $pid "*) continue ;; esac
+      pids+=("$pid")
+    done < <(pgrep -f "$p" 2>/dev/null || true)
+  done
+  printf '%s\n' "${pids[@]}" | sort -u | grep -v '^$' || true
+}
+
+PIDS=$(collect | tr '\n' ' ')
+if [ -z "${PIDS// }" ]; then echo "agr-stop: nothing running."; exit 0; fi
+
+echo "agr-stop: SIGINT → ${PIDS}"
+kill -INT $PIDS 2>/dev/null || true
+sleep 3   # PX4 needs a moment to close its ULog and dataman files
+
+REMAINING=$(collect | tr '\n' ' ')
+if [ -n "${REMAINING// }" ]; then
+  echo "agr-stop: SIGKILL → ${REMAINING}"
+  kill -9 $REMAINING 2>/dev/null || true
+fi
+echo "agr-stop: done."

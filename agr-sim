@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# Author: Prof. Anis Koubaa <anis.koubaa@gmail.com>
+# Agentic Robotics — launch a UAV simulation with every environment fix applied.
+#
+# Modelled on RAISE 2026's `raise-sim`. The whole point is that you type
+# `agr-sim` and nothing else: no sourcing, no PATH surgery, no remembering
+# which python is which.
+#
+# Five environment hazards handled here, all of which cost an afternoon each:
+#
+#   1. ANACONDA. If anaconda is on PATH, `python3` is its interpreter (3.11 on
+#      this machine) while ROS 2 Jazzy is built for the system 3.12. ROS's
+#      python modules — `em`, `catkin_pkg`, `rosidl` — are invisible to it, so
+#      builds die with "No module named 'em'" and nodes fail to import rclpy.
+#      Stripped from PATH here, along with CONDA_*.
+#
+#   2. VS Code snap terminals inject GTK / locale paths that load the wrong
+#      libpthread on Ubuntu 24.04, so `gz sim gui` dies with a symbol lookup
+#      error. Stripped.
+#
+#   3. Hybrid Intel iGPU + NVIDIA dGPU laptops route OpenGL to Intel, and
+#      Gazebo Harmonic's Ogre2 hangs at GL context creation. PRIME offload is
+#      applied when an NVIDIA card is present.
+#
+#   4. Ubuntu 24.04 defaults to Wayland, where Gazebo's Qt GUI often hangs on a
+#      blank window. Forced to the xcb (X11/XWayland) backend when the session
+#      is Wayland; pure-X11 setups are untouched.
+#
+#   5. PX4's binary resolves libgz-*.so from the ROS vendor Gazebo under
+#      /opt/ros/<distro>/opt/gz_*_vendor/. Sourcing ROS here is what puts them
+#      on LD_LIBRARY_PATH — without it PX4 exits with
+#      "error while loading shared libraries: libgz-utils2.so.2".
+#
+# Usage:
+#   agr-sim                                   # one x500, GUI
+#   agr-sim headless:=true                    # no GUI
+#   agr-sim airframe:=rc_cessna               # fixed-wing
+#   agr-sim --multi count:=3                  # three vehicles
+#   agr-sim --multi airframes:=x500,standard_vtol,rc_cessna
+#   agr-stop                                  # tear it all down
+set -euo pipefail
+
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(dirname "${SCRIPT_PATH}")"
+
+# $HOME/$USER come from a LOGIN shell; ssh-with-a-command and cron have neither.
+RUN_HOME="${HOME:-$(getent passwd "$(id -un)" | cut -d: -f6)}"
+RUN_USER="${USER:-$(id -un)}"
+
+AGR_WS="${AGR_WS:-${RUN_HOME}/ros2_ws}"
+AGR_ROS_DISTRO="${AGR_ROS_DISTRO:-jazzy}"
+
+LAUNCH_FILE="single.launch.py"
+if [[ "${1:-}" == "--multi" ]]; then LAUNCH_FILE="multi.launch.py"; shift; fi
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  sed -n '2,30p' "$SCRIPT_PATH" | sed 's/^#\s\?//'; exit 0
+fi
+
+if [[ ! -f "${AGR_WS}/install/setup.bash" ]]; then
+  cat >&2 <<EOF
+✗ Workspace not built at ${AGR_WS}.
+  Build it with:   ${SCRIPT_DIR}/setup.sh
+  Or point elsewhere:  AGR_WS=/path/to/ws agr-sim
+EOF
+  exit 1
+fi
+
+# ── env vars to unset (snap + anaconda injections) ──────────────────────────
+SNAP_VARS=(
+  GTK_PATH GTK_EXE_PREFIX GTK_IM_MODULE_FILE
+  GIO_MODULE_DIR LOCPATH
+  GSETTINGS_SCHEMA_DIR GSETTINGS_SCHEMA_DIR_CONDA_BACKUP
+  XDG_DATA_HOME XDG_CONFIG_HOME XDG_CACHE_HOME
+  VSCODE_GIT_ASKPASS_NODE VSCODE_GIT_ASKPASS_MAIN VSCODE_GIT_IPC_HANDLE
+  GIT_ASKPASS VSCODE_INJECTION VSCODE_IPC_HOOK_CLI ELECTRON_RUN_AS_NODE
+)
+CONDA_VARS=(CONDA_PREFIX CONDA_DEFAULT_ENV CONDA_PROMPT_MODIFIER CONDA_SHLVL CONDA_EXE)
+# PYTHONPATH is dropped too: a stale one from ANOTHER colcon workspace puts that
+# workspace's python packages ahead of this one's, and you debug the wrong code.
+# Sourcing ROS + this workspace below rebuilds it correctly.
+OTHER_VARS=(PYTHONPATH)
+
+unset_args=()
+for v in "${SNAP_VARS[@]}" "${CONDA_VARS[@]}" "${OTHER_VARS[@]}"; do unset_args+=(-u "$v"); done
+
+# ── conditional NVIDIA PRIME offload ────────────────────────────────────────
+PRIME_VARS=()
+if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L 2>/dev/null | grep -q GPU; then
+  PRIME_VARS=(__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia
+              __VK_LAYER_NV_optimus=NVIDIA_only)
+fi
+
+# ── conditional Wayland → xcb ───────────────────────────────────────────────
+QT_VARS=()
+if [[ "${XDG_SESSION_TYPE:-}" == "wayland" || -n "${WAYLAND_DISPLAY:-}" ]]; then
+  QT_VARS=(QT_QPA_PLATFORM=xcb)
+fi
+
+strip_paths() { echo "${1:-}" | tr ':' '\n' | grep -vE '/snap/|anaconda|miniconda' | paste -sd:; }
+strip_snap()  { echo "${1:-}" | tr ':' '\n' | grep -v '/snap/'                     | paste -sd:; }
+
+exec env "${unset_args[@]}" \
+    PATH="$(strip_paths "${PATH:-/usr/bin:/bin}")" \
+    LD_LIBRARY_PATH="$(strip_snap "${LD_LIBRARY_PATH:-}")" \
+    XDG_DATA_DIRS="$(strip_snap "${XDG_DATA_DIRS:-/usr/local/share:/usr/share}")" \
+    DISPLAY="${DISPLAY:-:0}" \
+    XAUTHORITY="${XAUTHORITY:-/run/user/$(id -u)/gdm/Xauthority}" \
+    HOME="${RUN_HOME}" USER="${RUN_USER}" \
+    AGR_WS="${AGR_WS}" AGR_ROS_DISTRO="${AGR_ROS_DISTRO}" LAUNCH_FILE="${LAUNCH_FILE}" \
+    "${PRIME_VARS[@]}" "${QT_VARS[@]}" \
+  bash -c '
+    set +u
+    source "/opt/ros/${AGR_ROS_DISTRO}/setup.bash"
+    source "${AGR_WS}/install/setup.bash"
+    exec ros2 launch agr_uav_bringup "${LAUNCH_FILE}" "$@"
+  ' bash "$@"

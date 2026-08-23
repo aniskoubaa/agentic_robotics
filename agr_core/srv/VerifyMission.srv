@@ -1,0 +1,4 @@
+MissionPlan        plan
+MissionConstraints constraints
+---
+VerificationResult result

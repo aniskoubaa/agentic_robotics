@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>agr_uav_worlds</name>
+  <version>0.1.0</version>
+  <description>Agentic Robotics — Gazebo worlds for UAV labs.</description>
+  <maintainer email="anis.koubaa@gmail.com">Anis Koubaa</maintainer>
+  <license>MIT</license>
+  <export><build_type>ament_python</build_type></export>
+</package>

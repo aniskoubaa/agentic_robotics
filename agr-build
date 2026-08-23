@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Author: Prof. Anis Koubaa <anis.koubaa@gmail.com>
+# Agentic Robotics — build the workspace with the right python.
+#
+# The reason this exists rather than "just run colcon build": if anaconda is on
+# PATH, `python3` is anaconda's (3.11 here) while ROS 2 Jazzy targets the system
+# 3.12. colcon then fails with "No module named 'em'" — em/empy IS installed,
+# just not visible to that interpreter. Strip anaconda and pin Python3_EXECUTABLE
+# and the problem cannot occur.
+set -euo pipefail
+
+RUN_HOME="${HOME:-$(getent passwd "$(id -un)" | cut -d: -f6)}"
+AGR_WS="${AGR_WS:-${RUN_HOME}/ros2_ws}"
+AGR_ROS_DISTRO="${AGR_ROS_DISTRO:-jazzy}"
+
+exec env -u PYTHONPATH -u CONDA_PREFIX -u CONDA_DEFAULT_ENV -u CONDA_PROMPT_MODIFIER \
+         -u CONDA_SHLVL -u CONDA_EXE \
+    PATH="$(echo "${PATH}" | tr ':' '\n' | grep -vE 'anaconda|miniconda' | paste -sd:)" \
+    HOME="${RUN_HOME}" AGR_WS="${AGR_WS}" AGR_ROS_DISTRO="${AGR_ROS_DISTRO}" \
+  bash -c '
+    set +u
+    source "/opt/ros/${AGR_ROS_DISTRO}/setup.bash"
+    set -u
+    cd "${AGR_WS}"
+    echo "[agr-build] python: $(python3 -V)   ($(command -v python3))"
+    exec colcon build --symlink-install \
+         --cmake-args -DPython3_EXECUTABLE=/usr/bin/python3 "$@"
+  ' bash "$@"

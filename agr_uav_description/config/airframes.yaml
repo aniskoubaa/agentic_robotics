@@ -1,0 +1,68 @@
+# Agentic Robotics — UAV airframe registry.
+#
+# One entry per airframe we support. `sys_autostart` is PX4's SYS_AUTOSTART id
+# (see PX4-Autopilot/ROMFS/px4fmu_common/init.d-posix/airframes/); `px4_model`
+# is what PX4_SIM_MODEL expects.
+#
+# The `capabilities` block is the part that matters for verification. A mission
+# is not feasible or infeasible in the abstract — it is feasible FOR A PLATFORM.
+# "Loiter at this point" is trivial for a multirotor and impossible for a
+# fixed-wing. Anything that reasons about missions must read these.
+
+airframes:
+
+  x500:
+    px4_model:      gz_x500
+    sys_autostart:  4001
+    description:    "Holybro X500 quadrotor — the baseline platform."
+    capabilities:
+      airframe_class:     multirotor
+      can_hover:          true
+      can_vtol_transition: false
+      min_airspeed_ms:    0.0
+      min_turn_radius_m:  0.0
+      cruise_speed_ms:    8.0
+      max_altitude_m:     120.0
+      endurance_s:        900
+
+  x500_mono_cam:
+    px4_model:      gz_x500_mono_cam
+    sys_autostart:  4010
+    description:    "X500 with a forward monocular camera — for perception labs."
+    capabilities:
+      airframe_class:     multirotor
+      can_hover:          true
+      can_vtol_transition: false
+      min_airspeed_ms:    0.0
+      min_turn_radius_m:  0.0
+      cruise_speed_ms:    8.0
+      max_altitude_m:     120.0
+      endurance_s:        900
+
+  standard_vtol:
+    px4_model:      gz_standard_vtol
+    sys_autostart:  4004
+    description:    "Standard VTOL — hovers AND cruises on the wing."
+    capabilities:
+      airframe_class:     vtol
+      can_hover:          true
+      can_vtol_transition: true
+      min_airspeed_ms:    15.0   # below this the wing cannot hold the aircraft up
+      min_turn_radius_m:  60.0   # in fixed-wing mode
+      cruise_speed_ms:    18.0
+      max_altitude_m:     150.0
+      endurance_s:        2400
+
+  rc_cessna:
+    px4_model:      gz_rc_cessna
+    sys_autostart:  4003
+    description:    "RC Cessna fixed-wing — cannot hover, cannot stop."
+    capabilities:
+      airframe_class:     fixedwing
+      can_hover:          false   # every 'loiter here' becomes an orbit, not a hover
+      can_vtol_transition: false
+      min_airspeed_ms:    14.0
+      min_turn_radius_m:  50.0
+      cruise_speed_ms:    20.0
+      max_altitude_m:     150.0
+      endurance_s:        1800
