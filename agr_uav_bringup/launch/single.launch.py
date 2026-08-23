@@ -10,11 +10,16 @@ Airframes come from agr_uav_description/config/airframes.yaml —
 `ros2 run agr_uav_tools list_airframes` prints them.
 """
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, LogInfo, OpaqueFunction
+from launch.actions import (DeclareLaunchArgument, LogInfo, OpaqueFunction,
+                            RegisterEventHandler)
+from launch.event_handlers import OnProcessExit
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
-from agr_uav_bringup.px4_sitl import px4_sitl_process, xrce_agent_process
+from agr_uav_bringup.px4_sitl import (gz_gui_process, gz_ready_process,
+                                      gz_server_process,
+                                      px4_sitl_process, resolve_world,
+                                      xrce_agent_process)
 from agr_uav_description import load_airframe
 from agr_uav_tools.px4_topics import namespace_for_instance
 
@@ -40,26 +45,43 @@ def _setup(context, *_args, **_kwargs):
                     f'{namespace or "(none)"}'),
     ]
 
+    # Resolve the world to an absolute path now, so a typo fails here with the
+    # list of valid names rather than as an empty Gazebo scene.
+    world_path = resolve_world(arg('world'), arg('px4_dir'))
+    actions.append(LogInfo(msg=f'[agr_uav] world: {world_path}'))
+
     if arg('agent').lower() in ('true', '1', 'yes'):
         actions.append(xrce_agent_process(port=int(arg('agent_port'))))
 
-    actions.append(px4_sitl_process(
+    # We start Gazebo; PX4 attaches to it (see px4_sitl.py for why).
+    actions.append(gz_server_process(world_path, arg('px4_dir')))
+    if not headless:
+        actions.append(gz_gui_process(world_path, arg('px4_dir')))
+
+    px4 = px4_sitl_process(
         sys_autostart=frame.sys_autostart,
         px4_model=frame.px4_model,
         world=arg('world'),
         instance=instance,
         headless=headless,
         px4_dir=arg('px4_dir'),
-    ))
+    )
 
+    after_ready = [px4]
     if arg('monitor').lower() in ('true', '1', 'yes'):
-        actions.append(Node(
+        after_ready.append(Node(
             package='agr_uav_tools',
             executable='vehicle_monitor',
             name='vehicle_monitor',
             output='screen',
             parameters=[{'namespace': namespace}],
         ))
+
+    # Start PX4 only once Gazebo is genuinely up (see gz_ready_process).
+    ready = gz_ready_process(arg('world'))
+    actions.append(ready)
+    actions.append(RegisterEventHandler(
+        OnProcessExit(target_action=ready, on_exit=after_ready)))
 
     return actions
 
@@ -69,7 +91,8 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument('airframe', default_value='x500',
                               description='registry name; see list_airframes'),
         DeclareLaunchArgument('world', default_value='default',
-                              description='PX4 Gazebo world name'),
+                              description='world name: default | agr_city | agr_defense '
+                                          '| any PX4 world (baylands, forest, windy, …)'),
         DeclareLaunchArgument('headless', default_value='false',
                               description='no Gazebo GUI'),
         DeclareLaunchArgument('instance', default_value='0',

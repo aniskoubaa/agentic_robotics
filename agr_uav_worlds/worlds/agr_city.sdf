@@ -1,0 +1,957 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated for Agentic Robotics. Primitives only: no Fuel dependencies, so
+     it loads identically offline and on a CPU-only machine. -->
+<sdf version="1.9">
+  <world name="agr_city">
+    <physics type="ode">
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>250</real_time_update_rate>
+    </physics>
+    <gravity>0 0 -9.8</gravity>
+    <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
+    <atmosphere type="adiabatic"/>
+    <scene>
+      <grid>false</grid>
+      <ambient>0.45 0.45 0.45 1</ambient>
+      <background>0.75 0.80 0.88 1</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>1 1</size></plane></geometry>
+          <surface><friction><ode/></friction><bounce/><contact/></surface>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>1000 1000</size></plane></geometry>
+          <material>
+            <ambient>0.28 0.28 0.3 1</ambient>
+            <diffuse>0.28 0.28 0.3 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <light name="sunUTC" type="directional">
+      <pose>0 0 500 0 -0 0</pose>
+      <cast_shadows>true</cast_shadows>
+      <intensity>1</intensity>
+      <direction>0.001 0.625 -0.78</direction>
+      <diffuse>0.904 0.904 0.904 1</diffuse>
+      <specular>0.271 0.271 0.271 1</specular>
+      <attenuation><range>2000</range><linear>0</linear><constant>1</constant><quadratic>0</quadratic></attenuation>
+      <spot><inner_angle>0</inner_angle><outer_angle>0</outer_angle><falloff>0</falloff></spot>
+    </light>
+
+    <spherical_coordinates>
+      <surface_model>EARTH_WGS84</surface_model>
+      <world_frame_orientation>ENU</world_frame_orientation>
+      <latitude_deg>24.7136</latitude_deg>
+      <longitude_deg>46.6753</longitude_deg>
+      <elevation>612</elevation>
+    </spherical_coordinates>
+
+    <model name="bldg_0_0a">
+      <static>true</static>
+      <pose>-107.00 -106.00 13.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 26</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 26</size></box></geometry>
+          <material>
+            <ambient>0.62 0.62 0.66 1</ambient>
+            <diffuse>0.62 0.62 0.66 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_0_0b">
+      <static>true</static>
+      <pose>-92.00 -93.00 7.80 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 15.6</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 15.6</size></box></geometry>
+          <material>
+            <ambient>0.68 0.66 0.62 1</ambient>
+            <diffuse>0.68 0.66 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_0_1a">
+      <static>true</static>
+      <pose>-57.00 -106.00 17.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 34</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 34</size></box></geometry>
+          <material>
+            <ambient>0.55 0.57 0.62 1</ambient>
+            <diffuse>0.55 0.57 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_0_1b">
+      <static>true</static>
+      <pose>-42.00 -93.00 10.20 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 20.4</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 20.4</size></box></geometry>
+          <material>
+            <ambient>0.48 0.52 0.58 1</ambient>
+            <diffuse>0.48 0.52 0.58 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_0_2a">
+      <static>true</static>
+      <pose>-7.00 -106.00 9.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 18</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 18</size></box></geometry>
+          <material>
+            <ambient>0.68 0.66 0.62 1</ambient>
+            <diffuse>0.68 0.66 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_0_2b">
+      <static>true</static>
+      <pose>8.00 -93.00 5.40 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 10.799999999999999</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 10.799999999999999</size></box></geometry>
+          <material>
+            <ambient>0.72 0.7 0.68 1</ambient>
+            <diffuse>0.72 0.7 0.68 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_0_3a">
+      <static>true</static>
+      <pose>43.00 -106.00 21.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 42</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 42</size></box></geometry>
+          <material>
+            <ambient>0.48 0.52 0.58 1</ambient>
+            <diffuse>0.48 0.52 0.58 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_0_3b">
+      <static>true</static>
+      <pose>58.00 -93.00 12.60 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 25.2</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 25.2</size></box></geometry>
+          <material>
+            <ambient>0.62 0.62 0.66 1</ambient>
+            <diffuse>0.62 0.62 0.66 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_0_4a">
+      <static>true</static>
+      <pose>93.00 -106.00 11.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 22</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 22</size></box></geometry>
+          <material>
+            <ambient>0.72 0.7 0.68 1</ambient>
+            <diffuse>0.72 0.7 0.68 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_0_4b">
+      <static>true</static>
+      <pose>108.00 -93.00 6.60 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 13.2</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 13.2</size></box></geometry>
+          <material>
+            <ambient>0.55 0.57 0.62 1</ambient>
+            <diffuse>0.55 0.57 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_1_0a">
+      <static>true</static>
+      <pose>-107.00 -56.00 15.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 30</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 30</size></box></geometry>
+          <material>
+            <ambient>0.55 0.57 0.62 1</ambient>
+            <diffuse>0.55 0.57 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_1_0b">
+      <static>true</static>
+      <pose>-92.00 -43.00 9.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 18.0</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 18.0</size></box></geometry>
+          <material>
+            <ambient>0.48 0.52 0.58 1</ambient>
+            <diffuse>0.48 0.52 0.58 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="park_1_1">
+      <static>true</static>
+      <pose>-50.00 -50.00 0.15 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>34.0 34.0 0.3</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>34.0 34.0 0.3</size></box></geometry>
+          <material>
+            <ambient>0.24 0.42 0.22 1</ambient>
+            <diffuse>0.24 0.42 0.22 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_1_2a">
+      <static>true</static>
+      <pose>-7.00 -56.00 23.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 46</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 46</size></box></geometry>
+          <material>
+            <ambient>0.48 0.52 0.58 1</ambient>
+            <diffuse>0.48 0.52 0.58 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_1_2b">
+      <static>true</static>
+      <pose>8.00 -43.00 13.80 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 27.599999999999998</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 27.599999999999998</size></box></geometry>
+          <material>
+            <ambient>0.62 0.62 0.66 1</ambient>
+            <diffuse>0.62 0.62 0.66 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_1_3a">
+      <static>true</static>
+      <pose>43.00 -56.00 10.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 20</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 20</size></box></geometry>
+          <material>
+            <ambient>0.72 0.7 0.68 1</ambient>
+            <diffuse>0.72 0.7 0.68 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_1_3b">
+      <static>true</static>
+      <pose>58.00 -43.00 6.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 12.0</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 12.0</size></box></geometry>
+          <material>
+            <ambient>0.55 0.57 0.62 1</ambient>
+            <diffuse>0.55 0.57 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_1_4a">
+      <static>true</static>
+      <pose>93.00 -56.00 19.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 38</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 38</size></box></geometry>
+          <material>
+            <ambient>0.62 0.62 0.66 1</ambient>
+            <diffuse>0.62 0.62 0.66 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_1_4b">
+      <static>true</static>
+      <pose>108.00 -43.00 11.40 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 22.8</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 22.8</size></box></geometry>
+          <material>
+            <ambient>0.68 0.66 0.62 1</ambient>
+            <diffuse>0.68 0.66 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_2_0a">
+      <static>true</static>
+      <pose>-107.00 -6.00 8.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 16</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 16</size></box></geometry>
+          <material>
+            <ambient>0.68 0.66 0.62 1</ambient>
+            <diffuse>0.68 0.66 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_2_0b">
+      <static>true</static>
+      <pose>-92.00 7.00 4.80 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 9.6</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 9.6</size></box></geometry>
+          <material>
+            <ambient>0.72 0.7 0.68 1</ambient>
+            <diffuse>0.72 0.7 0.68 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_2_1a">
+      <static>true</static>
+      <pose>-57.00 -6.00 12.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 24</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 24</size></box></geometry>
+          <material>
+            <ambient>0.48 0.52 0.58 1</ambient>
+            <diffuse>0.48 0.52 0.58 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_2_1b">
+      <static>true</static>
+      <pose>-42.00 7.00 7.20 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 14.399999999999999</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 14.399999999999999</size></box></geometry>
+          <material>
+            <ambient>0.62 0.62 0.66 1</ambient>
+            <diffuse>0.62 0.62 0.66 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="park_2_2">
+      <static>true</static>
+      <pose>0.00 0.00 0.15 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>34.0 34.0 0.3</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>34.0 34.0 0.3</size></box></geometry>
+          <material>
+            <ambient>0.24 0.42 0.22 1</ambient>
+            <diffuse>0.24 0.42 0.22 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_2_3a">
+      <static>true</static>
+      <pose>43.00 -6.00 14.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 28</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 28</size></box></geometry>
+          <material>
+            <ambient>0.62 0.62 0.66 1</ambient>
+            <diffuse>0.62 0.62 0.66 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_2_3b">
+      <static>true</static>
+      <pose>58.00 7.00 8.40 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 16.8</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 16.8</size></box></geometry>
+          <material>
+            <ambient>0.68 0.66 0.62 1</ambient>
+            <diffuse>0.68 0.66 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_2_4a">
+      <static>true</static>
+      <pose>93.00 -6.00 7.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 14</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 14</size></box></geometry>
+          <material>
+            <ambient>0.55 0.57 0.62 1</ambient>
+            <diffuse>0.55 0.57 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_2_4b">
+      <static>true</static>
+      <pose>108.00 7.00 4.20 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 8.4</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 8.4</size></box></geometry>
+          <material>
+            <ambient>0.48 0.52 0.58 1</ambient>
+            <diffuse>0.48 0.52 0.58 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_3_0a">
+      <static>true</static>
+      <pose>-107.00 44.00 20.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 40</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 40</size></box></geometry>
+          <material>
+            <ambient>0.48 0.52 0.58 1</ambient>
+            <diffuse>0.48 0.52 0.58 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_3_0b">
+      <static>true</static>
+      <pose>-92.00 57.00 12.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 24.0</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 24.0</size></box></geometry>
+          <material>
+            <ambient>0.62 0.62 0.66 1</ambient>
+            <diffuse>0.62 0.62 0.66 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_3_1a">
+      <static>true</static>
+      <pose>-57.00 44.00 10.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 20</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 20</size></box></geometry>
+          <material>
+            <ambient>0.72 0.7 0.68 1</ambient>
+            <diffuse>0.72 0.7 0.68 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_3_1b">
+      <static>true</static>
+      <pose>-42.00 57.00 6.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 12.0</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 12.0</size></box></geometry>
+          <material>
+            <ambient>0.55 0.57 0.62 1</ambient>
+            <diffuse>0.55 0.57 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_3_2a">
+      <static>true</static>
+      <pose>-7.00 44.00 16.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 32</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 32</size></box></geometry>
+          <material>
+            <ambient>0.62 0.62 0.66 1</ambient>
+            <diffuse>0.62 0.62 0.66 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_3_2b">
+      <static>true</static>
+      <pose>8.00 57.00 9.60 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 19.2</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 19.2</size></box></geometry>
+          <material>
+            <ambient>0.68 0.66 0.62 1</ambient>
+            <diffuse>0.68 0.66 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="park_3_3">
+      <static>true</static>
+      <pose>50.00 50.00 0.15 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>34.0 34.0 0.3</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>34.0 34.0 0.3</size></box></geometry>
+          <material>
+            <ambient>0.24 0.42 0.22 1</ambient>
+            <diffuse>0.24 0.42 0.22 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_3_4a">
+      <static>true</static>
+      <pose>93.00 44.00 18.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 36</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 36</size></box></geometry>
+          <material>
+            <ambient>0.68 0.66 0.62 1</ambient>
+            <diffuse>0.68 0.66 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_3_4b">
+      <static>true</static>
+      <pose>108.00 57.00 10.80 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 21.599999999999998</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 21.599999999999998</size></box></geometry>
+          <material>
+            <ambient>0.72 0.7 0.68 1</ambient>
+            <diffuse>0.72 0.7 0.68 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_4_0a">
+      <static>true</static>
+      <pose>-107.00 94.00 9.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 18</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 18</size></box></geometry>
+          <material>
+            <ambient>0.72 0.7 0.68 1</ambient>
+            <diffuse>0.72 0.7 0.68 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_4_0b">
+      <static>true</static>
+      <pose>-92.00 107.00 5.40 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 10.799999999999999</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 10.799999999999999</size></box></geometry>
+          <material>
+            <ambient>0.55 0.57 0.62 1</ambient>
+            <diffuse>0.55 0.57 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_4_1a">
+      <static>true</static>
+      <pose>-57.00 94.00 22.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 44</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 44</size></box></geometry>
+          <material>
+            <ambient>0.62 0.62 0.66 1</ambient>
+            <diffuse>0.62 0.62 0.66 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_4_1b">
+      <static>true</static>
+      <pose>-42.00 107.00 13.20 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 26.4</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 26.4</size></box></geometry>
+          <material>
+            <ambient>0.68 0.66 0.62 1</ambient>
+            <diffuse>0.68 0.66 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_4_2a">
+      <static>true</static>
+      <pose>-7.00 94.00 12.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 24</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 24</size></box></geometry>
+          <material>
+            <ambient>0.55 0.57 0.62 1</ambient>
+            <diffuse>0.55 0.57 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_4_2b">
+      <static>true</static>
+      <pose>8.00 107.00 7.20 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 14.399999999999999</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 14.399999999999999</size></box></geometry>
+          <material>
+            <ambient>0.48 0.52 0.58 1</ambient>
+            <diffuse>0.48 0.52 0.58 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_4_3a">
+      <static>true</static>
+      <pose>43.00 94.00 15.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 30</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 30</size></box></geometry>
+          <material>
+            <ambient>0.68 0.66 0.62 1</ambient>
+            <diffuse>0.68 0.66 0.62 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_4_3b">
+      <static>true</static>
+      <pose>58.00 107.00 9.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 18.0</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 18.0</size></box></geometry>
+          <material>
+            <ambient>0.72 0.7 0.68 1</ambient>
+            <diffuse>0.72 0.7 0.68 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_4_4a">
+      <static>true</static>
+      <pose>93.00 94.00 10.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>17.0 17.0 20</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>17.0 17.0 20</size></box></geometry>
+          <material>
+            <ambient>0.48 0.52 0.58 1</ambient>
+            <diffuse>0.48 0.52 0.58 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="bldg_4_4b">
+      <static>true</static>
+      <pose>108.00 107.00 6.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>14.28 14.28 12.0</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>14.28 14.28 12.0</size></box></geometry>
+          <material>
+            <ambient>0.62 0.62 0.66 1</ambient>
+            <diffuse>0.62 0.62 0.66 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="tower_landmark">
+      <static>true</static>
+      <pose>120.00 -110.00 45.00 0 0 0.0000</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><box><size>18 18 90</size></box></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>18 18 90</size></box></geometry>
+          <material>
+            <ambient>0.35 0.38 0.45 1</ambient>
+            <diffuse>0.35 0.38 0.45 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="helipad">
+      <static>true</static>
+      <pose>0.00 0.00 0.05 0 0 0</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><cylinder><radius>6.0</radius><length>0.1</length></cylinder></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><cylinder><radius>6.0</radius><length>0.1</length></cylinder></geometry>
+          <material>
+            <ambient>0.85 0.85 0.85 1</ambient>
+            <diffuse>0.85 0.85 0.85 1</diffuse>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+    <model name="helipad_ring">
+      <static>true</static>
+      <pose>0.00 0.00 0.11 0 0 0</pose>
+      <link name="link">
+        <collision name="c">
+          <geometry><cylinder><radius>4.2</radius><length>0.02</length></cylinder></geometry>
+        </collision>
+        <visual name="v">
+          <geometry><cylinder><radius>4.2</radius><length>0.02</length></cylinder></geometry>
+          <material>
+            <ambient>0.15 0.15 0.15 1</ambient>
+            <diffuse>0.15 0.15 0.15 1</diffuse>
+          </material>
+          
+        </visual>
+      </link>
+    </model>
+  </world>
+</sdf>

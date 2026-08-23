@@ -15,11 +15,16 @@ That asymmetry is why every node here takes `namespace` as a parameter.
 ONE XRCE agent serves all of them; they differ by DDS key, not port.
 """
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, LogInfo, OpaqueFunction
+from launch.actions import (DeclareLaunchArgument, LogInfo, OpaqueFunction,
+                            RegisterEventHandler)
+from launch.event_handlers import OnProcessExit
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
-from agr_uav_bringup.px4_sitl import px4_sitl_process, xrce_agent_process
+from agr_uav_bringup.px4_sitl import (gz_gui_process, gz_ready_process,
+                                      gz_server_process,
+                                      px4_sitl_process, resolve_world,
+                                      xrce_agent_process)
 from agr_uav_description import load_airframe
 from agr_uav_tools.px4_topics import namespace_for_instance
 
@@ -43,17 +48,29 @@ def _setup(context, *_args, **_kwargs):
     headless = arg('headless').lower() in ('true', '1', 'yes')
     frames = [load_airframe(n) for n in names]
 
+    world_path = resolve_world(arg('world'), arg('px4_dir'))
+
+    # ONE Gazebo server and ONE XRCE agent for the whole fleet. Vehicles are
+    # distinguished by PX4 instance (DDS key + namespace), not by process.
     actions = [
         LogInfo(msg=f'[agr_uav] launching {len(frames)} vehicles: '
                     + ', '.join(f.name for f in frames)),
+        LogInfo(msg=f'[agr_uav] world: {world_path}'),
         xrce_agent_process(port=int(arg('agent_port'))),
+        gz_server_process(world_path, arg('px4_dir')),
     ]
+    if not headless:
+        actions.append(gz_gui_process(world_path, arg('px4_dir')))
 
+    ready = gz_ready_process(arg('world'))
+    actions.append(ready)
+
+    fleet = []
     for i, frame in enumerate(frames):
         ns = namespace_for_instance(i)
         actions.append(LogInfo(
             msg=f'[agr_uav]   [{i}] {frame.name:<14} → {ns or "(no namespace)"}'))
-        actions.append(px4_sitl_process(
+        fleet.append(px4_sitl_process(
             sys_autostart=frame.sys_autostart,
             px4_model=frame.px4_model,
             world=arg('world'),
@@ -63,7 +80,7 @@ def _setup(context, *_args, **_kwargs):
             px4_dir=arg('px4_dir'),
         ))
         if arg('monitor').lower() in ('true', '1', 'yes'):
-            actions.append(Node(
+            fleet.append(Node(
                 package='agr_uav_tools',
                 executable='vehicle_monitor',
                 name='vehicle_monitor',
@@ -72,6 +89,8 @@ def _setup(context, *_args, **_kwargs):
                 parameters=[{'namespace': ns}],
             ))
 
+    actions.append(RegisterEventHandler(
+        OnProcessExit(target_action=ready, on_exit=fleet)))
     return actions
 
 
