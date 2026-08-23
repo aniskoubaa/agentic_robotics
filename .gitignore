@@ -11,3 +11,4 @@ __pycache__/
 *.pth
 *.safetensors
 *.ckpt
+legged/agr_legged_description/meshes/

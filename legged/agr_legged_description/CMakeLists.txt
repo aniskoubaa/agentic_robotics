@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 3.8)
+project(agr_legged_description)
+find_package(ament_cmake REQUIRED)
+# meshes/ is fetched by fetch_meshes.sh and gitignored; install it only if present
+install(DIRECTORY urdf config DESTINATION share/${PROJECT_NAME})
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/meshes")
+  install(DIRECTORY meshes DESTINATION share/${PROJECT_NAME})
+endif()
+install(PROGRAMS fetch_meshes.sh DESTINATION share/${PROJECT_NAME})
+ament_package()

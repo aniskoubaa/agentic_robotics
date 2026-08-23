@@ -1,0 +1,220 @@
+<?xml version="1.0"?>
+<!--
+  Unitree Go2 — kinematics, joint limits, masses and actuator torques taken
+  from the official unitree_ros go2_description (BSD-3-Clause).
+
+  VISUALS: the official .dae meshes are used when present, and primitive shapes
+  of the same dimensions when they are not. Fetch them with
+
+      legged/agr_legged_description/fetch_meshes.sh        (~25 MB, pinned)
+
+  They are gitignored, not vendored — the same rule px4_msgs follows. Upstream
+  assets get cloned at setup time and pinned to a commit; copying them into this
+  repo would bloat history AND fork them away from upstream fixes.
+
+  COLLISION geometry stays primitive regardless. That is not a shortcut: the
+  official description does the same, because a 10 MB visual mesh makes a
+  terrible collision shape.
+
+  Kinematics, joint limits, masses and actuator torques come from the official
+  go2_description either way, so the robot BEHAVES identically with or without
+  the meshes — only its appearance changes.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="go2">
+
+  <!-- ── dimensions (metres) ───────────────────────────────────────────── -->
+  <xacro:property name="trunk_length" value="0.3762"/>
+  <xacro:property name="trunk_width"  value="0.0935"/>
+  <xacro:property name="trunk_height" value="0.114"/>
+  <xacro:property name="trunk_mass"   value="6.921"/>
+
+  <xacro:property name="hip_offset_x" value="0.1934"/>
+  <xacro:property name="hip_offset_y" value="0.0465"/>
+  <xacro:property name="thigh_offset" value="0.0955"/>
+  <xacro:property name="thigh_length" value="0.213"/>
+  <xacro:property name="calf_length"  value="0.213"/>
+
+  <xacro:property name="hip_radius"   value="0.046"/>
+  <xacro:property name="hip_length"   value="0.04"/>
+  <xacro:property name="thigh_width"  value="0.0245"/>
+  <xacro:property name="thigh_height" value="0.034"/>
+  <xacro:property name="calf_width"   value="0.016"/>
+  <xacro:property name="foot_radius"  value="0.02"/>
+
+  <xacro:property name="hip_mass"   value="0.678"/>
+  <xacro:property name="thigh_mass" value="1.152"/>
+  <xacro:property name="calf_mass"  value="0.154"/>
+  <xacro:property name="foot_mass"  value="0.06"/>
+
+  <!-- ── joint limits (rad, rad/s, N·m) ────────────────────────────────── -->
+  <xacro:property name="hip_min"   value="-1.0472"/>
+  <xacro:property name="hip_max"   value="1.0472"/>
+  <xacro:property name="hip_tau"   value="23.7"/>
+  <xacro:property name="hip_vel"   value="30.1"/>
+  <xacro:property name="thigh_min" value="-1.5708"/>
+  <xacro:property name="thigh_max" value="3.4907"/>
+  <xacro:property name="thigh_tau" value="23.7"/>
+  <xacro:property name="thigh_vel" value="30.1"/>
+  <!-- The calf CANNOT straighten: its range is entirely negative. A planner
+       that assumes a fully extendable leg produces poses this robot cannot
+       reach, which is the legged analogue of asking a fixed-wing to hover. -->
+  <xacro:property name="calf_min"  value="-2.7227"/>
+  <xacro:property name="calf_max"  value="-0.83776"/>
+  <xacro:property name="calf_tau"  value="35.55"/>
+  <xacro:property name="calf_vel"  value="20.06"/>
+
+  <!-- Set from the launch file; true only when fetch_meshes.sh has run. -->
+  <xacro:arg name="use_meshes" default="false"/>
+  <xacro:property name="use_meshes" value="$(arg use_meshes)"/>
+  <xacro:property name="mesh_dir" value="package://agr_legged_description/meshes"/>
+
+  <material name="go2_dark"><color rgba="0.15 0.15 0.16 1"/></material>
+  <material name="go2_grey"><color rgba="0.45 0.45 0.48 1"/></material>
+  <material name="go2_accent"><color rgba="0.85 0.55 0.10 1"/></material>
+
+  <xacro:macro name="box_inertia" params="m x y z">
+    <inertial>
+      <mass value="${m}"/>
+      <inertia ixx="${m*(y*y+z*z)/12}" ixy="0" ixz="0"
+               iyy="${m*(x*x+z*z)/12}" iyz="0" izz="${m*(x*x+y*y)/12}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- ── trunk ─────────────────────────────────────────────────────────── -->
+  <link name="base_link">
+    <visual>
+      <xacro:if value="${use_meshes}">
+        <geometry><mesh filename="${mesh_dir}/base.dae"/></geometry>
+      </xacro:if>
+      <xacro:unless value="${use_meshes}">
+        <geometry><box size="${trunk_length} ${trunk_width*2} ${trunk_height}"/></geometry>
+        <material name="go2_dark"/>
+      </xacro:unless>
+    </visual>
+    <collision>
+      <geometry><box size="${trunk_length} ${trunk_width*2} ${trunk_height}"/></geometry>
+    </collision>
+    <xacro:box_inertia m="${trunk_mass}" x="${trunk_length}" y="${trunk_width*2}" z="${trunk_height}"/>
+  </link>
+
+  <!-- head marker, so "forward" is obvious in the GUI -->
+  <link name="head">
+    <visual>
+      <geometry><box size="0.05 0.06 0.03"/></geometry>
+      <material name="go2_accent"/>
+    </visual>
+    <inertial><mass value="0.01"/><inertia ixx="1e-5" ixy="0" ixz="0" iyy="1e-5" iyz="0" izz="1e-5"/></inertial>
+  </link>
+  <joint name="head_joint" type="fixed">
+    <parent link="base_link"/><child link="head"/>
+    <origin xyz="${trunk_length/2} 0 0.02"/>
+  </joint>
+
+  <!-- ── one leg: hip → thigh → calf → foot ────────────────────────────── -->
+  <!-- mirror_x: +1 front, -1 rear.  mirror_y: +1 left, -1 right. -->
+  <xacro:macro name="leg" params="name mirror_x mirror_y">
+    <link name="${name}_hip">
+      <visual>
+        <xacro:if value="${use_meshes}">
+          <geometry><mesh filename="${mesh_dir}/hip.dae"/></geometry>
+        </xacro:if>
+        <xacro:unless value="${use_meshes}">
+          <origin rpy="0 ${pi/2} 0"/>
+          <geometry><cylinder radius="${hip_radius}" length="${hip_length}"/></geometry>
+          <material name="go2_grey"/>
+        </xacro:unless>
+      </visual>
+      <collision>
+        <origin rpy="0 ${pi/2} 0"/>
+        <geometry><cylinder radius="${hip_radius}" length="${hip_length}"/></geometry>
+      </collision>
+      <xacro:box_inertia m="${hip_mass}" x="${hip_length}" y="${hip_radius*2}" z="${hip_radius*2}"/>
+    </link>
+    <joint name="${name}_hip_joint" type="revolute">
+      <parent link="base_link"/><child link="${name}_hip"/>
+      <origin xyz="${mirror_x*hip_offset_x} ${mirror_y*hip_offset_y} 0"/>
+      <axis xyz="1 0 0"/>
+      <limit lower="${hip_min}" upper="${hip_max}" effort="${hip_tau}" velocity="${hip_vel}"/>
+      <dynamics damping="0.01" friction="0.2"/>
+    </joint>
+
+    <link name="${name}_thigh">
+      <visual>
+        <xacro:if value="${use_meshes}">
+          <!-- upstream ships a mirrored thigh for the right-hand legs -->
+          <geometry><mesh filename="${mesh_dir}/thigh${'' if mirror_y == 1 else '_mirror'}.dae"/></geometry>
+        </xacro:if>
+        <xacro:unless value="${use_meshes}">
+          <origin xyz="0 0 ${-thigh_length/2}"/>
+          <geometry><box size="${thigh_height} ${thigh_width} ${thigh_length}"/></geometry>
+          <material name="go2_dark"/>
+        </xacro:unless>
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${-thigh_length/2}"/>
+        <geometry><box size="${thigh_height} ${thigh_width} ${thigh_length}"/></geometry>
+      </collision>
+      <xacro:box_inertia m="${thigh_mass}" x="${thigh_height}" y="${thigh_width}" z="${thigh_length}"/>
+    </link>
+    <joint name="${name}_thigh_joint" type="revolute">
+      <parent link="${name}_hip"/><child link="${name}_thigh"/>
+      <origin xyz="0 ${mirror_y*thigh_offset} 0"/>
+      <axis xyz="0 1 0"/>
+      <limit lower="${thigh_min}" upper="${thigh_max}" effort="${thigh_tau}" velocity="${thigh_vel}"/>
+      <dynamics damping="0.01" friction="0.2"/>
+    </joint>
+
+    <link name="${name}_calf">
+      <visual>
+        <xacro:if value="${use_meshes}">
+          <geometry><mesh filename="${mesh_dir}/calf${'' if mirror_y == 1 else '_mirror'}.dae"/></geometry>
+        </xacro:if>
+        <xacro:unless value="${use_meshes}">
+          <origin xyz="0 0 ${-calf_length/2}"/>
+          <geometry><box size="${calf_width} ${calf_width} ${calf_length}"/></geometry>
+          <material name="go2_grey"/>
+        </xacro:unless>
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${-calf_length/2}"/>
+        <geometry><box size="${calf_width} ${calf_width} ${calf_length}"/></geometry>
+      </collision>
+      <xacro:box_inertia m="${calf_mass}" x="${calf_width}" y="${calf_width}" z="${calf_length}"/>
+    </link>
+    <joint name="${name}_calf_joint" type="revolute">
+      <parent link="${name}_thigh"/><child link="${name}_calf"/>
+      <origin xyz="0 0 ${-thigh_length}"/>
+      <axis xyz="0 1 0"/>
+      <limit lower="${calf_min}" upper="${calf_max}" effort="${calf_tau}" velocity="${calf_vel}"/>
+      <dynamics damping="0.01" friction="0.2"/>
+    </joint>
+
+    <link name="${name}_foot">
+      <visual>
+        <xacro:if value="${use_meshes}">
+          <geometry><mesh filename="${mesh_dir}/foot.dae"/></geometry>
+        </xacro:if>
+        <xacro:unless value="${use_meshes}">
+          <geometry><sphere radius="${foot_radius}"/></geometry><material name="go2_accent"/>
+        </xacro:unless>
+      </visual>
+      <collision><geometry><sphere radius="${foot_radius}"/></geometry></collision>
+      <inertial>
+        <mass value="${foot_mass}"/>
+        <inertia ixx="1e-5" ixy="0" ixz="0" iyy="1e-5" iyz="0" izz="1e-5"/>
+      </inertial>
+    </link>
+    <joint name="${name}_foot_joint" type="fixed">
+      <parent link="${name}_calf"/><child link="${name}_foot"/>
+      <origin xyz="0 0 ${-calf_length}"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- Unitree's own naming: FL front-left, FR front-right, RL/RR rear. -->
+  <xacro:leg name="FL" mirror_x="1"  mirror_y="1"/>
+  <xacro:leg name="FR" mirror_x="1"  mirror_y="-1"/>
+  <xacro:leg name="RL" mirror_x="-1" mirror_y="1"/>
+  <xacro:leg name="RR" mirror_x="-1" mirror_y="-1"/>
+
+  <xacro:include filename="$(find agr_legged_description)/urdf/go2_gazebo.xacro"/>
+</robot>

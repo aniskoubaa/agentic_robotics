@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<!-- Gazebo + ros2_control wiring for the Go2. -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Feet need real friction or the robot skates. Everything else is
+       ordinary. mu 0.8 is the value the official description uses. -->
+  <xacro:macro name="foot_surface" params="name">
+    <gazebo reference="${name}_foot">
+      <mu1>0.8</mu1><mu2>0.8</mu2>
+      <kp>1000000.0</kp><kd>100.0</kd>
+      <self_collide>false</self_collide>
+    </gazebo>
+  </xacro:macro>
+  <xacro:foot_surface name="FL"/>
+  <xacro:foot_surface name="FR"/>
+  <xacro:foot_surface name="RL"/>
+  <xacro:foot_surface name="RR"/>
+
+  <gazebo reference="base_link"><self_collide>false</self_collide></gazebo>
+
+  <!-- ── ros2_control: 12 position-controlled joints ────────────────────
+       Position control, not effort. A torque-controlled quadruped needs a
+       real locomotion controller to stand up at all; position control lets
+       the robot hold a stance and move between poses, which is what the
+       bringup and the labs need. Swap to effort interfaces when a
+       locomotion stack (champ, OCS2, RL policy) is plugged in.            -->
+  <ros2_control name="GazeboSystem" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    <xacro:macro name="leg_ctrl" params="name">
+      <joint name="${name}_hip_joint">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+        <state_interface name="effort"/>
+      </joint>
+      <joint name="${name}_thigh_joint">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+        <state_interface name="effort"/>
+      </joint>
+      <joint name="${name}_calf_joint">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+        <state_interface name="effort"/>
+      </joint>
+    </xacro:macro>
+    <xacro:leg_ctrl name="FL"/>
+    <xacro:leg_ctrl name="FR"/>
+    <xacro:leg_ctrl name="RL"/>
+    <xacro:leg_ctrl name="RR"/>
+  </ros2_control>
+
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find agr_legged_bringup)/config/go2_controllers.yaml</parameters>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+  </gazebo>
+
+  <!-- IMU on the trunk — a legged robot without one has no idea which way is up. -->
+  <link name="imu_link">
+    <inertial><mass value="0.01"/><inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/></inertial>
+  </link>
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/><child link="imu_link"/><origin xyz="0 0 0"/>
+  </joint>
+  <gazebo reference="imu_link">
+    <sensor name="imu_sensor" type="imu">
+      <always_on>1</always_on><update_rate>200</update_rate>
+      <topic>imu</topic>
+    </sensor>
+  </gazebo>
+</robot>

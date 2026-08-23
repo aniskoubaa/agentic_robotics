@@ -38,6 +38,8 @@
 #   agr-sim uav --multi count:=3              # UAV: three vehicles
 #   agr-sim ground                            # GROUND: Husky in the greenhouse
 #   agr-sim ground world:=greenhouse_2026_lite.sdf
+#   agr-sim legged                            # LEGGED: Unitree Go2, inspection site
+#   agr-sim legged pose:=crouch
 #   agr-stop                                  # tear down whichever is running
 #
 # The platform word is optional and defaults to `uav`, so existing UAV commands
@@ -66,10 +68,13 @@ fi
 # platform's packages.
 PLATFORM="uav"
 case "${1:-}" in
-  uav|ground) PLATFORM="$1"; shift ;;
+  uav|ground|legged) PLATFORM="$1"; shift ;;
 esac
 
-if [[ "$PLATFORM" == "ground" ]]; then
+if [[ "$PLATFORM" == "legged" ]]; then
+  LAUNCH_PKG="agr_legged_bringup"
+  LAUNCH_FILE="sim.launch.py"
+elif [[ "$PLATFORM" == "ground" ]]; then
   LAUNCH_PKG="agribot_bringup"
   LAUNCH_FILE="sim.launch.py"
   [[ "${1:-}" == "--world-only" ]] && { LAUNCH_FILE="world_only.launch.py"; shift; }
@@ -105,6 +110,49 @@ OTHER_VARS=(PYTHONPATH)
 
 unset_args=()
 for v in "${SNAP_VARS[@]}" "${CONDA_VARS[@]}" "${OTHER_VARS[@]}"; do unset_args+=(-u "$v"); done
+
+# ── Fast-CDR ABI preflight (fail clearly, do NOT work around) ──────────────
+#
+# ros2_control's message typesupport can be built against a NEWER fastcdr than
+# the installed ros-<distro>-fastcdr — an apt tree that has drifted out of sync.
+# It shows up as the Gazebo server dying the instant gz_ros2_control loads:
+#
+#   symbol lookup error: libcontroller_manager_msgs__rosidl_typesupport_fastrtps_cpp.so:
+#   undefined symbol: _ZN8eprosima7fastcdr3Cdr9serializeERKh
+#
+# Only the legged stack uses ros2_control, so nothing else here hits it.
+#
+# THERE IS NO SAFE WORKAROUND, and it is worth writing down why: preloading the
+# newer fastcdr does resolve the symbol, and then robot_state_publisher,
+# ros_gz_sim/create and parameter_bridge all abort with BadParamException,
+# because Fast-RTPS was compiled against the OLDER fastcdr and its wire
+# serialisation no longer matches. Tested, 2026-08-23. That trades a loud crash
+# for silently corrupt DDS traffic, which is a far worse failure mode. So this
+# refuses to launch and names the fix instead.
+if [[ "$PLATFORM" == "legged" ]]; then
+  _cm_ts="/opt/ros/${AGR_ROS_DISTRO}/lib/libcontroller_manager_msgs__rosidl_typesupport_fastrtps_cpp.so"
+  if [[ -f "$_cm_ts" ]] && ! python3 -c "import ctypes,sys; ctypes.CDLL(sys.argv[1])" "$_cm_ts" 2>/dev/null; then
+    cat >&2 <<EOF
+✗ ros2_control message typesupport will not load on this machine.
+
+  Your ROS packages are out of sync with each other:
+      $(dpkg -s "ros-${AGR_ROS_DISTRO}-fastcdr" 2>/dev/null | awk '/^Version:/{print "    ros-'"${AGR_ROS_DISTRO}"'-fastcdr                 " $2}')
+      $(dpkg -s "ros-${AGR_ROS_DISTRO}-controller-manager-msgs" 2>/dev/null | awk '/^Version:/{print "    ros-'"${AGR_ROS_DISTRO}"'-controller-manager-msgs  " $2}')
+  controller_manager_msgs was built against a newer fastcdr than the one
+  installed, so its typesupport has an undefined symbol.
+
+  Fix:
+      sudo apt update && sudo apt upgrade
+
+  Do not try to preload a newer fastcdr: it resolves the symbol and then
+  Fast-RTPS aborts with BadParamException, because the wire format no longer
+  matches. A clean failure here is better than corrupt DDS traffic.
+
+  The UAV and ground platforms are unaffected — neither uses ros2_control.
+EOF
+    exit 1
+  fi
+fi
 
 # ── conditional NVIDIA PRIME offload ────────────────────────────────────────
 PRIME_VARS=()

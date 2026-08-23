@@ -99,6 +99,13 @@ alias agr_replay='_agr_vla "${AGR_D2}/day2_01_teleoperation_and_data/starter/06_
 # path a student on a fresh machine takes, so it is the one worth testing.
 alias agr_vla_hf='VLA_LOCAL_CKPT="${AGR_VLA_HF_REF}" _agr_vla "${AGR_D2}/day2_02_vla_executor/starter/vla_one_step.py"'
 
+# ── legged platform (Unitree Go2) ───────────────────────────────────────────
+alias agr_legged='agr-sim legged'
+alias agr_stand='ros2 run agr_legged_bringup stand'
+alias agr_crouch='ros2 run agr_legged_bringup stand --pose crouch'
+alias agr_tuck='ros2 run agr_legged_bringup stand --pose tuck'
+alias agr_legged_joints='ros2 topic echo /joint_states --once'
+
 agr_help() {
   cat <<'HELP'
 Agentic Robotics — UAV track
@@ -115,7 +122,11 @@ Agentic Robotics — UAV track
              agr_drive                     keyboard teleop
              agr_cam                       camera view
 
-  stop       agr-stop                      SIGINT then SIGKILL, either stack
+  LEGGED     agr-sim legged                Unitree Go2 on the inspection site
+             agr_stand / agr_crouch / agr_tuck
+             agr_legged_joints             12 joint positions
+
+  stop       agr-stop                      SIGINT then SIGKILL, any stack
 
   build      agr-build                     colcon with the correct python
              agr-build --packages-select agr_uav_tools

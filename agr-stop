@@ -14,6 +14,10 @@ set -uo pipefail
 PATTERNS=(
   'ros2 launch agr_uav_bringup'
   'ros2 launch agribot_bringup'
+  'ros2 launch agr_legged_bringup'
+  'lib/agr_legged_bringup/'
+  'controller_manager'
+  'robot_state_publisher'
   'lib/agribot_teleop/'
   'lib/agribot_tools/'
   'ros_gz_sim/create'
