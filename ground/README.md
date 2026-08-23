@@ -1,9 +1,9 @@
 # Ground platform
 
-The RAISE 2026 summer-school stack, brought across **unmodified**: same package
+The AgriBot stack (originally the AgriBot summer-school stack), brought across **unmodified**: same package
 names, same launch files, same labs. Nothing was renamed.
 
-## Why the names are still `raise2026_*`
+## Why the names are still `agribot_*`
 
 Renaming these to `agr_ground_*` would touch every import, entry point, launch
 reference and alias across ~140 files — including the Day-2 VLA labs, which
@@ -19,13 +19,13 @@ the labs actually exercised — not a side effect of moving folders.
 
 | Package | Purpose |
 |---|---|
-| `raise2026_bringup` | `sim.launch.py`, `world_only.launch.py`, ros_gz bridge config |
-| `raise2026_worlds` | `greenhouse_2026.sdf`, `greenhouse_2026_lite.sdf` + plant/tree/chicken meshes |
-| `raise2026_description` | Husky + UR arm + Robotiq gripper URDF/xacro |
-| `raise2026_tools` | Tool servers: gripper, navigation, move_to_pose, detector (YOLO), inspector (VLM), grasp |
-| `raise2026_teleop` | Keyboard, phone (Flask) and joystick teleop; camera view |
-| `raise2026_labs` | Day 1–3 exercises: ROS 2 tools as functions, agentic inspector, teleop + data collection, VLA executor, full stack, hackathon |
-| `raise2026_demos` | One-command demo scripts |
+| `agribot_bringup` | `sim.launch.py`, `world_only.launch.py`, ros_gz bridge config |
+| `agribot_worlds` | `greenhouse_2026.sdf`, `greenhouse_2026_lite.sdf` + plant/tree/chicken meshes |
+| `agribot_description` | Husky + UR arm + Robotiq gripper URDF/xacro |
+| `agribot_tools` | Tool servers: gripper, navigation, move_to_pose, detector (YOLO), inspector (VLM), grasp |
+| `agribot_teleop` | Keyboard, phone (Flask) and joystick teleop; camera view |
+| `agribot_labs` | Day 1–3 exercises: ROS 2 tools as functions, agentic inspector, teleop + data collection, VLA executor, full stack, hackathon |
+| `agribot_demos` | One-command demo scripts |
 
 ## Running
 
@@ -44,7 +44,7 @@ downloads it on first use. The detector lab fetches it automatically the first
 time it runs, which needs network access once.
 
 **The Day-2 reference checkpoint** (fine-tuned SmolVLA, 687 MB) was never in
-this repo; `get_brain_d4` in the RAISE alias block downloads it from a GitHub
+this repo; `get_brain_d4` in the original course alias block downloads it from a GitHub
 release. If you want the VLA labs here, bring that helper across too.
 
 ## What has been verified
@@ -54,6 +54,6 @@ ros_gz bridge — `/cmd_vel`, `/joint_states` and the gripper joint commands are
 all live.
 
 The Day-2/Day-3 ML labs (LeRobot, VLA, YOLO, VLM) have **not** been exercised
-here. They need a GPU, python venvs and API keys, and they worked in the RAISE
+here. They need a GPU, python venvs and API keys, and they worked in the original
 workspace; nothing in this move should have changed them, but "should" is not
 "tested".

@@ -13,9 +13,9 @@ set -uo pipefail
 # Anchor on real executable paths, and filter out this process and its ancestors.
 PATTERNS=(
   'ros2 launch agr_uav_bringup'
-  'ros2 launch raise2026_bringup'
-  'lib/raise2026_teleop/'
-  'lib/raise2026_tools/'
+  'ros2 launch agribot_bringup'
+  'lib/agribot_teleop/'
+  'lib/agribot_tools/'
   'ros_gz_sim/create'
   'px4_sitl_default/bin/px4'
   '^gz sim'

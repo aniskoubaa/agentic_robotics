@@ -2,7 +2,7 @@
 # Author: Prof. Anis Koubaa <anis.koubaa@gmail.com>
 # Agentic Robotics — launch a UAV simulation with every environment fix applied.
 #
-# Modelled on RAISE 2026's `raise-sim`. The whole point is that you type
+# Modelled on AgriBot's `raise-sim`. The whole point is that you type
 # `agr-sim` and nothing else: no sourcing, no PATH surgery, no remembering
 # which python is which.
 #
@@ -70,7 +70,7 @@ case "${1:-}" in
 esac
 
 if [[ "$PLATFORM" == "ground" ]]; then
-  LAUNCH_PKG="raise2026_bringup"
+  LAUNCH_PKG="agribot_bringup"
   LAUNCH_FILE="sim.launch.py"
   [[ "${1:-}" == "--world-only" ]] && { LAUNCH_FILE="world_only.launch.py"; shift; }
 else

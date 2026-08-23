@@ -52,20 +52,20 @@ agentic_robotics/
 │   ├── agr_uav_tools/                # PX4 topic resolver, vehicle_monitor
 │   ├── agr_uav_worlds/               # agr_city, agr_defense
 │   └── agr_uav_labs/                 # numbered exercises
-└── ground/                           # RAISE 2026 stack, unmodified
-    ├── raise2026_bringup/            # Husky + greenhouse launch
-    ├── raise2026_worlds/             # greenhouse_2026(_lite)
-    ├── raise2026_description/        # Husky + UR arm + Robotiq gripper
-    ├── raise2026_tools/              # gripper / nav / detector / inspector servers
-    ├── raise2026_teleop/             # keyboard, phone, joystick
-    ├── raise2026_labs/               # Day 1-3 exercises
-    └── raise2026_demos/
+└── ground/                           # AgriBot stack, unmodified
+    ├── agribot_bringup/            # Husky + greenhouse launch
+    ├── agribot_worlds/             # greenhouse_2026(_lite)
+    ├── agribot_description/        # Husky + UR arm + Robotiq gripper
+    ├── agribot_tools/              # gripper / nav / detector / inspector servers
+    ├── agribot_teleop/             # keyboard, phone, joystick
+    ├── agribot_labs/               # Day 1-3 exercises
+    └── agribot_demos/
 ```
 
 `legged/` slots in the same way when you add it; `common/agr_core` is already
 platform-neutral.
 
-**Ground packages keep their `raise2026_*` names on purpose** — see
+**Ground packages keep their `agribot_*` names on purpose** — see
 `ground/README.md`. Renaming would touch ~140 files including VLA labs that
 need a GPU and checkpoints to verify, and an unverifiable rename is how a
 working course quietly breaks.
@@ -82,7 +82,7 @@ agr-sim world:=agr_defense               # secured installation
 agr-sim airframe:=rc_cessna              # fixed-wing
 agr-sim uav --multi count:=3             # three vehicles
 
-# Ground (RAISE)
+# Ground (AgriBot)
 agr-sim ground                           # Husky in the greenhouse
 agr-sim ground world:=greenhouse_2026_lite.sdf
 agr-sim ground --world-only

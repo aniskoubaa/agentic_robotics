@@ -3,7 +3,7 @@
 #
 #     source ~/ros2_ws/src/agentic_robotics/agr_aliases.sh
 #
-# Namespaced `agr_*` so it never collides with the RAISE 2026 alias block.
+# Namespaced `agr_*` so it never collides with the AgriBot alias block.
 
 _AGR_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 export AGR_SRC="${_AGR_DIR}"
@@ -60,11 +60,11 @@ alias agr_status='agr_echo vehicle_status'
 alias agr_pos='agr_echo vehicle_local_position'
 alias agr_batt='agr_echo battery_status'
 
-# ── ground platform (RAISE 2026 stack, unmodified) ──────────────────────────
+# ── ground platform (AgriBot stack, unmodified) ──────────────────────────
 alias agr_ground='agr-sim ground'
 alias agr_ground_lite='agr-sim ground world:=greenhouse_2026_lite.sdf'
-alias agr_drive='ros2 run raise2026_teleop teleop_keyboard'
-alias agr_cam='ros2 run raise2026_teleop camera_view'
+alias agr_drive='ros2 run agribot_teleop teleop_keyboard'
+alias agr_cam='ros2 run agribot_teleop camera_view'
 alias agr_ground_topics='ros2 topic list | grep -E "cmd_vel|scan|camera|joint_states|odom"'
 
 agr_help() {
