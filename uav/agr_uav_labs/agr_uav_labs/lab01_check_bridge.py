@@ -52,7 +52,7 @@ def main(args=None) -> int:
         print('\n   ✗ No /fmu topics at all.')
         print('     Either PX4 is not running, or the Micro XRCE-DDS agent is not.')
         print('     Start both with:  ros2 launch agr_uav_bringup single.launch.py')
-        node.destroy_node(); rclpy.shutdown()
+        node.destroy_node(); rclpy.try_shutdown()
         return 1
 
     # Step 3 deliberately uses battery_status, NOT vehicle_status.
@@ -70,7 +70,7 @@ def main(args=None) -> int:
     if topic is None:
         print('\n   ✗ /fmu topics exist but battery_status is not among them.')
         print('     Usually a px4_msgs / PX4 version mismatch.')
-        node.destroy_node(); rclpy.shutdown()
+        node.destroy_node(); rclpy.try_shutdown()
         return 1
 
     got = {'msg': None}
@@ -88,7 +88,7 @@ def main(args=None) -> int:
         print('\n   ✗ The topic is advertised but delivered nothing.')
         print('     PX4 is BEST_EFFORT — a default RELIABLE subscription never')
         print('     matches and never errors. Use agr_uav_tools.px4_topics.PX4_QOS.')
-        node.destroy_node(); rclpy.shutdown()
+        node.destroy_node(); rclpy.try_shutdown()
         return 1
 
     print(f'3. data received .............. yes '
@@ -112,7 +112,7 @@ def main(args=None) -> int:
 
     print('\n   ✓ Bridge is up. On to lab 02.')
     node.destroy_node()
-    rclpy.shutdown()
+    rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
     return 0
 
 

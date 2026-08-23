@@ -11,6 +11,7 @@ of the two is wrong when nothing arrives.
 from __future__ import annotations
 
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from px4_msgs.msg import BatteryStatus, VehicleLocalPosition, VehicleStatus
 
@@ -125,9 +126,18 @@ def main(args=None) -> None:
     node = VehicleMonitor()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
+    except Exception:
+        # Shutdown race: when SIGTERM lands while the executor is mid
+        # wait-set init, rcl raises RCLError instead of the tidy
+        # ExternalShutdownException, and the node exits with a traceback that
+        # looks like a crash. Which node loses this race varies run to run.
+        # If the context is already down we are unwinding anyway — swallow it.
+        # If it is still up, this is a genuine fault: re-raise untouched.
+        if rclpy.ok():
+            raise
     finally:
         node.destroy_node()
         if rclpy.ok():
-            rclpy.shutdown()
+            rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down

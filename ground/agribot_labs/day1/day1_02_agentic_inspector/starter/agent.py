@@ -471,7 +471,7 @@ def main():
             print(f'  💾 report saved to {path}')
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
 
 
 if __name__ == '__main__':

@@ -132,7 +132,7 @@ def main():
     pan_pub.publish(Float64(data=0.0))
     tilt_pub.publish(Float64(data=0.0))
     node.destroy_node()
-    rclpy.shutdown()
+    rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
 
 
 if __name__ == '__main__':

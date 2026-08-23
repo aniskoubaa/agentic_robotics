@@ -390,7 +390,7 @@ def main():
     try:
         node = InspectorServer()
     except SystemExit:
-        rclpy.shutdown()
+        rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
         return
 
     # ROS spins on a background thread so the main thread can drive the
@@ -426,7 +426,7 @@ def main():
     finally:
         cv2.destroyAllWindows()
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
 
 
 if __name__ == '__main__':

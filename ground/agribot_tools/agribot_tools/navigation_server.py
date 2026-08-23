@@ -40,7 +40,7 @@ import time
 
 import rclpy
 from rclpy.callback_groups import ReentrantCallbackGroup
-from rclpy.executors import MultiThreadedExecutor
+from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
 from rclpy.node import Node
 
 from geometry_msgs.msg import Twist
@@ -406,12 +406,25 @@ def main():
     executor.add_node(node)
     try:
         executor.spin()
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
-    # Final safety stop on shutdown.
-    node._cmd_pub.publish(Twist())
+    except Exception:
+        # Shutdown race: when SIGTERM lands while the executor is mid
+        # wait-set init, rcl raises RCLError instead of the tidy
+        # ExternalShutdownException, and the node exits with a traceback that
+        # looks like a crash. Which node loses this race varies run to run.
+        # If the context is already down we are unwinding anyway — swallow it.
+        # If it is still up, this is a genuine fault: re-raise untouched.
+        if rclpy.ok():
+            raise
+    # Final safety stop on shutdown — but only while the context is alive.
+    # On SIGTERM rclpy has already torn down, and publishing then raises
+    # RCLError rather than stopping the robot: a safety stop that throws is
+    # worse than none, because it also masks the real exit path.
+    if rclpy.ok():
+        node._cmd_pub.publish(Twist())
     node.destroy_node()
-    rclpy.shutdown()
+    rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
 
 
 if __name__ == '__main__':

@@ -91,7 +91,7 @@ def main():
                 f'    ros2 run agribot_tools inspector_server\n'
                 f'(needs OPENAI_API_KEY in env)'
             )
-            rclpy.shutdown()
+            rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
             sys.exit(1)
 
     while rclpy.ok():
@@ -134,7 +134,7 @@ def main():
             print(f'    └────────────────────────────────────────────────')
 
     node.destroy_node()
-    rclpy.shutdown()
+    rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
 
 
 if __name__ == '__main__':

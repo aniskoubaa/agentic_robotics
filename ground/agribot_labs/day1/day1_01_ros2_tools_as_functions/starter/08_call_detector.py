@@ -106,7 +106,7 @@ def main():
                 f'No server on {srv_name}. Start it with:\n'
                 f'    ros2 run agribot_tools detector_server'
             )
-            rclpy.shutdown()
+            rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
             sys.exit(1)
 
     while rclpy.ok():
@@ -142,7 +142,7 @@ def main():
             print(f'  {mark} success={resp.success}  message="{resp.message}"')
 
     node.destroy_node()
-    rclpy.shutdown()
+    rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
 
 
 if __name__ == '__main__':

@@ -331,7 +331,7 @@ def main():
         if spawned:
             node.cleanup_scene()
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
 
     print('\n\n── result ──────────────────────────────')
     print(f'  outcome     : {result.status.upper()}  ({result.note})')

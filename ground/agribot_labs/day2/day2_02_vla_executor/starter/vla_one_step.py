@@ -234,7 +234,7 @@ def main():
     img, state = node.latest_img, node.state_vec()
     if img is None or state is None:
         print('✗ no camera image / joint state — is the sim running? (sim_d2)')
-        node.destroy_node(); rclpy.shutdown(); sys.exit(1)
+        node.destroy_node(); rclpy.try_shutdown(); sys.exit(1)
 
     # 3) the call(s)
     print('═' * 62)
@@ -285,7 +285,7 @@ def main():
         for name in ('tomato_red_0', 'tomato_green_0'):
             gz_utils.remove_model(name)
     node.destroy_node()
-    rclpy.shutdown()
+    rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
 
 
 if __name__ == '__main__':

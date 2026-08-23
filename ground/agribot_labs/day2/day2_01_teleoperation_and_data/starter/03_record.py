@@ -39,6 +39,7 @@ from pathlib import Path
 
 import numpy as np
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from sensor_msgs.msg import Image, JointState
 from std_msgs.msg import Float64
@@ -205,8 +206,17 @@ def main():
             dataset.save_episode()
             ep += 1
             print(f'  ✓ saved episode {ep}.')
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
+    except Exception:
+        # Shutdown race: when SIGTERM lands while the executor is mid
+        # wait-set init, rcl raises RCLError instead of the tidy
+        # ExternalShutdownException, and the node exits with a traceback that
+        # looks like a crash. Which node loses this race varies run to run.
+        # If the context is already down we are unwinding anyway — swallow it.
+        # If it is still up, this is a genuine fault: re-raise untouched.
+        if rclpy.ok():
+            raise
     finally:
         # v3.0: finalize writes dataset-level stats/metadata once recording ends.
         try:
@@ -214,7 +224,7 @@ def main():
         except Exception:
             pass
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
         print(f'\nDone. {ep} episodes in {root}. Next: 04_upload.py to ship them.')
 
 

@@ -30,6 +30,7 @@ from pathlib import Path
 
 import numpy as np
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.duration import Duration as RclpyDuration
 from rclpy.parameter import Parameter as RclpyParameter
 from rclpy.node import Node
@@ -211,7 +212,7 @@ def main():
     right_pt = node.tool_point()
     if left_pt is None or right_pt is None:
         print('✗ could not locate grasp points (sim/TF not ready).')
-        node.destroy_node(); rclpy.shutdown(); sys.exit(1)
+        node.destroy_node(); rclpy.try_shutdown(); sys.exit(1)
 
     results = []
     try:
@@ -225,12 +226,21 @@ def main():
             mean_l = np.mean(lat) if lat else 0.0
             print(f'  trial {t + 1:>2}/{args.trials}  red={"L" if red_left else "R"}'
                   f'  → {outcome:<12} (mean act {mean_l:5.1f} ms)')
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
+    except Exception:
+        # Shutdown race: when SIGTERM lands while the executor is mid
+        # wait-set init, rcl raises RCLError instead of the tidy
+        # ExternalShutdownException, and the node exits with a traceback that
+        # looks like a crash. Which node loses this race varies run to run.
+        # If the context is already down we are unwinding anyway — swallow it.
+        # If it is still up, this is a genuine fault: re-raise untouched.
+        if rclpy.ok():
+            raise
     finally:
         node.goto(POSE_HOME, GRIPPER_OPEN, settle_s=1.5)
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
 
     if not results:
         sys.exit(1)

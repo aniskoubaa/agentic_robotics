@@ -24,6 +24,7 @@ import math
 import time
 
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 
 # `LaserScan` = the standard 2-D LiDAR message.
@@ -146,7 +147,7 @@ def stream_nearest(node: 'LidarOnce', seconds: float = 5.0) -> None:
                 if valid:
                     print(f'  t={end - now:4.1f}s   nearest = {min(valid):5.2f} m')
                 last_print = now
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         print()
 
 
@@ -199,7 +200,7 @@ def main():
             action(msg)
 
     node.destroy_node()
-    rclpy.shutdown()
+    rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
 
 
 if __name__ == '__main__':

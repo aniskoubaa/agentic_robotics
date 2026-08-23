@@ -30,6 +30,7 @@ from pathlib import Path
 
 import numpy as np
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from sensor_msgs.msg import Image, JointState
 
@@ -93,11 +94,11 @@ def main():
                 nan_flag = '  ⚠ NaN!' if any(np.isnan(vec)) else ''
             print(f'\rimage {img_str:>12} | state [{state_str}]{nan_flag}   ', end='', flush=True)
             time.sleep(period)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         print('\nstopped.')
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
 
 
 if __name__ == '__main__':

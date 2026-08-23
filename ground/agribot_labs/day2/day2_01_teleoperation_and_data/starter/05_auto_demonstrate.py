@@ -41,6 +41,7 @@ from pathlib import Path
 
 import numpy as np
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.duration import Duration as RclpyDuration
 from rclpy.parameter import Parameter as RclpyParameter
 from rclpy.node import Node
@@ -264,7 +265,7 @@ def main():
     if left_pt is None or right_pt is None:
         print('✗ could not compute the tool point (TF base_link->gripper, or the')
         print('  robot world pose from gz). Is the sim running? Check --gripper-link.')
-        node.destroy_node(); rclpy.shutdown(); sys.exit(1)
+        node.destroy_node(); rclpy.try_shutdown(); sys.exit(1)
     print(f'  left grasp point  : {tuple(round(v,3) for v in left_pt)}')
     print(f'  right grasp point : {tuple(round(v,3) for v in right_pt)}\n')
     # The trained model + these poses expect the plant-row parking (sim_d2).
@@ -326,8 +327,17 @@ def main():
                 print(f'  ✓ episode {saved}/{args.episodes}  ({n} frames, red={side}, grasp OK)')
 
             node.cleanup(['tomato_red_0', 'tomato_green_0'])
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
+    except Exception:
+        # Shutdown race: when SIGTERM lands while the executor is mid
+        # wait-set init, rcl raises RCLError instead of the tidy
+        # ExternalShutdownException, and the node exits with a traceback that
+        # looks like a crash. Which node loses this race varies run to run.
+        # If the context is already down we are unwinding anyway — swallow it.
+        # If it is still up, this is a genuine fault: re-raise untouched.
+        if rclpy.ok():
+            raise
     finally:
         if dataset is not None:
             try:
@@ -336,7 +346,7 @@ def main():
                 pass
         node.cleanup(['tomato_red_0', 'tomato_green_0'])
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
         if args.dry_run:
             print(f'\n[dry run] {saved} episodes rehearsed OK — nothing saved. '
                   f'Re-run without --dry-run to record.')
