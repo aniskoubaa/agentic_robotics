@@ -16,10 +16,10 @@ the numbers). Run it BEFORE vla_executor.py, so when you later watch the
 full rollout you know precisely what happens on every one of its steps:
 the executor is nothing more than this script inside a 10 Hz loop.
 
-    # sim (sim_d2) + grasp_server running, then:
-    vla_one_d4 --spawn                      # place tomatoes, 1 call, explain it
-    vla_one_d4 --spawn --execute            # ...and actually SEND the action
-    vla_one_d4 --steps 5                    # 5 calls in a row (see the chunk)
+    # sim (agr-sim ground) + grasp_server running, then:
+    agr_vla_one --spawn                      # place tomatoes, 1 call, explain it
+    agr_vla_one --spawn --execute            # ...and actually SEND the action
+    agr_vla_one --steps 5                    # 5 calls in a row (see the chunk)
 
 No joystick, no training required — it uses the reference checkpoint the
 executor uses (or VLA_LOCAL_CKPT if you exported one).
@@ -150,7 +150,7 @@ def spawn_scene(node, red_left=True):
     if left_pt is None or right_pt is None:
         # say WHICH half is broken, so the fix is obvious
         if gz_utils.get_model_world_pose('agribot_robot') is None:
-            print('✗ cannot reach the simulator (gz). Start it first:  sim_d2')
+            print('✗ cannot reach the simulator (gz). Start it first:  agr-sim ground')
         else:
             print('✗ sim is up but no TF from the robot yet — wait a few '
                   'seconds after sim start and re-run (ros2 topic echo /tf '
@@ -233,7 +233,7 @@ def main():
 
     img, state = node.latest_img, node.state_vec()
     if img is None or state is None:
-        print('✗ no camera image / joint state — is the sim running? (sim_d2)')
+        print('✗ no camera image / joint state — is the sim running? (agr-sim ground)')
         node.destroy_node(); rclpy.try_shutdown(); sys.exit(1)
 
     # 3) the call(s)
@@ -279,7 +279,7 @@ def main():
         print('or with --execute to publish the action and watch the arm move.')
     if not args.execute:
         print('Nothing was sent to the robot (add --execute to send).')
-    print('Next: the full loop →  vla_d4 --task C --spawn')
+    print('Next: the full loop →  agr_vla --task C --spawn')
 
     if args.spawn:                           # leave the scene as we found it
         for name in ('tomato_red_0', 'tomato_green_0'):

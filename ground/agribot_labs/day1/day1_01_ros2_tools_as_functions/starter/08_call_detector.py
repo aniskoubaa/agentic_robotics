@@ -46,7 +46,7 @@ Before running this, start the server in another terminal:
 
 Then run this client:
 
-    ros2 run agribot_labs 08_call_detector.py    # or:  08_d1
+    ros2 run agribot_labs 08_call_detector.py    # or:  ros2 run agribot_labs 08_*
 """
 
 import sys

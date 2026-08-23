@@ -13,9 +13,9 @@ LEARN - sensor_msgs/Image is metadata (width / height / encoding /
       - Once you have a numpy array, vision in ROS 2 is just normal
         OpenCV / NumPy — no special tricks.
 
-Run while `raise-sim` is up:
+Run while `agr-sim ground` is up:
 
-    ros2 run agribot_labs 03_read_camera.py    # or:  03_d1
+    ros2 run agribot_labs 03_read_camera.py    # or:  ros2 run agribot_labs 03_*
 """
 
 import time

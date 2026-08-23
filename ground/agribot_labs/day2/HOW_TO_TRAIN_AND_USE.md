@@ -15,7 +15,7 @@ The journey is five stages:
 ```
 
 > ⌨️ **No joystick needed.** The recommended path collects demos **hands-free**
-> (a scripted expert drives). Keyboard teleop exists (`01_d3`) and is worth 10
+> (a scripted expert drives). Keyboard teleop exists (`ros2 run agribot_labs 01_*`) and is worth 10
 > minutes to *feel* why manual demos are hard; the phone teleop only drives the
 > Husky base, not the arm.
 
@@ -44,8 +44,8 @@ Check it worked:
 ```
 
 > 📌 **Rule of thumb:** anything touching LeRobot (collect ③, train ④, run ⑤)
-> uses the **venv python** — the aliases (`03_d3 05_d3 06_d3 finetune_d4
-> vla_d4`) do this for you. Everything else is normal `ros2 run`.
+> uses the **venv python** — the aliases (`ros2 run agribot_labs 03_* ros2 run agribot_labs 05_* ros2 run agribot_labs 06_* agr_finetune
+> agr_vla`) do this for you. Everything else is normal `ros2 run`.
 
 ---
 
@@ -53,9 +53,9 @@ Check it worked:
 
 ```bash
 # terminal 1 — Gazebo, PARKED AT THE PLANT ROW (Day-2 poses + the trained
-# model expect this spot; plain raise-sim spawns in the empty aisle and the
+# model expect this spot; plain agr-sim ground spawns in the empty aisle and the
 # scripts will warn you). add headless:=true on a server / for speed.
-sim_d2            # = raise-sim x:=-2.0 y:=2.15 yaw:=1.5708
+agr-sim ground            # = agr-sim ground x:=-2.0 y:=2.15 yaw:=1.5708
 # terminal 2 — the grasp server: it IS the sim's grasping. Keep it running for
 # BOTH collection and execution.
 grasp_d3          # = ros2 run agribot_tools grasp_server
@@ -67,7 +67,7 @@ grasp_d3          # = ros2 run agribot_tools grasp_server
 
 ```bash
 # terminal 3
-05_d3 --episodes 50 --team team07 --hf-user me
+ros2 run agribot_labs 05_* --episodes 50 --team team07 --hf-user me
 ```
 
 A scripted expert spawns a red + green tomato at a real plant row, then
@@ -79,7 +79,7 @@ learn. Every take whose grasp doesn't verify is discarded. 50 clean episodes
 
 **Then verify the data before training** (the golden rule):
 ```bash
-06_d3 --task C --team team07 --hf-user me --episode 0 --spawn
+ros2 run agribot_labs 06_* --task C --team team07 --hf-user me --episode 0 --spawn
 ```
 The arm replays the recorded episode and the pick should reproduce. Smooth
 motion ending in a grasp → train. Anything else → fix the demos, not the model.
@@ -91,8 +91,8 @@ Your dataset lives **inside the repo**:
 <details><summary>⌨️ Manual alternative (drive it yourself)</summary>
 
 ```bash
-01_d3 --task C          # terminal 3 — keyboard teleop (h = help)
-03_d3 --task C --team team07 --hf-user me    # terminal 4 — recorder prompts you per episode
+ros2 run agribot_labs 01_* --task C          # terminal 3 — keyboard teleop (h = help)
+ros2 run agribot_labs 03_* --task C --team team07 --hf-user me    # terminal 4 — recorder prompts you per episode
 ```
 Slower and harder — but a valuable 10-minute experience of why data pipelines
 get automated.
@@ -103,7 +103,7 @@ get automated.
 ## ④ Train the model (~55 min, runs in the background)
 
 ```bash
-finetune_d4 --task C --team team07 --hf-user me --steps 6000 --launch
+agr_finetune --task C --team team07 --hf-user me --steps 6000 --launch
 tail -f ~/raise_checkpoints/smolvla_C_team07.train.log     # watch it learn
 ```
 
@@ -122,7 +122,7 @@ The checkpoint lands at
 
 ```bash
 export VLA_LOCAL_CKPT=~/raise_checkpoints/smolvla_C_team07/checkpoints/last/pretrained_model
-vla_d4 --task C --spawn --instruction "pick the red tomato"
+agr_vla --task C --spawn --instruction "pick the red tomato"
 ```
 
 `--spawn` sets up the scene (red + green tomato; `--red-side right` to flip).
@@ -153,13 +153,13 @@ The reference model scores **100/100** (8/8 picks in greenhouse scenes, 0 wrong 
 ~/raise_venvs/lerobot/bin/python3 -m pip install --timeout 30 --retries 10 "lerobot[smolvla]"
 
 # every session
-sim_d2                                                       # T1: sim at the plant row
+agr-sim ground                                                       # T1: sim at the plant row
 grasp_d3                                                     # T2: grasp server
-05_d3 --episodes 50 --team t --hf-user me                    # T3: collect (25 min)
-06_d3 --task C --team t --hf-user me --episode 0 --spawn     # verify by replay
-finetune_d4 --task C --team t --hf-user me --steps 6000 --launch   # train (~2 h)
+ros2 run agribot_labs 05_* --episodes 50 --team t --hf-user me                    # T3: collect (25 min)
+ros2 run agribot_labs 06_* --task C --team t --hf-user me --episode 0 --spawn     # verify by replay
+agr_finetune --task C --team t --hf-user me --steps 6000 --launch   # train (~2 h)
 export VLA_LOCAL_CKPT=~/raise_checkpoints/smolvla_C_t/checkpoints/last/pretrained_model
-vla_d4 --task C --spawn                                      # the payoff
+agr_vla --task C --spawn                                      # the payoff
 ```
 
 ## If something goes wrong

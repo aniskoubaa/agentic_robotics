@@ -86,7 +86,7 @@ def make_vla_client(backend: str | None = None):
         if ckpt == HF_REFERENCE and not _hf_cached(HF_REFERENCE):
             print(f'no local checkpoint — downloading the reference model from '
                   f'Hugging Face ({HF_REFERENCE}, ~900 MB, one time; '
-                  f'get_brain_d4 is the faster offline-safe alternative) ...')
+                  f'agr_vla_hf is the faster offline-safe alternative) ...')
         if ckpt == 'lerobot/smolvla_base':
             print('⚠ running the UN-fine-tuned base model — it will flail. '
                   '(Set VLA_LOCAL_CKPT to a fine-tuned checkpoint for a real run.)')

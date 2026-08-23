@@ -51,7 +51,7 @@ Anthropic tool-calling formats.
 
 ## Prerequisites
 
-- `raise-sim` is running (Gazebo open, you see the agroforestry plot)
+- `agr-sim ground` is running (Gazebo open, you see the agroforestry plot)
 - A terminal with the workspace sourced (any fresh shell does this via `~/.bashrc`)
 
 ## How to run the starters
@@ -66,9 +66,9 @@ ros2 run agribot_labs 02_read_lidar.py        # Ctrl-C to quit
 ros2 run agribot_labs 03_read_camera.py       # writes /tmp/raise_camera_frame.png
 ros2 run agribot_labs 04_aim_ptz.py           # 14-s PTZ look-around routine
 # Scripts 05–09 each need a matching server in another terminal.
-# The 05_d1 … 10_d1 aliases bundle the server + client for you, e.g.:
-05_d1   # starts gripper_server, runs 05_call_gripper.py, cleans up
-10_d1   # starts all 5 servers, runs 10_orchestrate.py (the LLM agent)
+# The ros2 run agribot_labs 05_* … ros2 run agribot_labs 10_* aliases bundle the server + client for you, e.g.:
+ros2 run agribot_labs 05_*   # starts gripper_server, runs 05_call_gripper.py, cleans up
+ros2 run agribot_labs 10_*   # starts all 5 servers, runs 10_orchestrate.py (the LLM agent)
 ```
 
 **B. Direct python3 from the source tree** *(useful while you're editing a script)*

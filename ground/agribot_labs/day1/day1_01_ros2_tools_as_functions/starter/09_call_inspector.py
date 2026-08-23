@@ -46,7 +46,7 @@ Before running this you need:
 
 Then run this client:
 
-    ros2 run agribot_labs 09_call_inspector.py    # or:  09_d1
+    ros2 run agribot_labs 09_call_inspector.py    # or:  ros2 run agribot_labs 09_*
 """
 
 import sys

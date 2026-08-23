@@ -31,7 +31,7 @@ source install/setup.bash
 
 ## Step 1 — Sim + world poses are flowing
 ```bash
-raise-sim                                    # terminal 1
+agr-sim ground                                    # terminal 1
 ros2 topic echo /gz_world_poses --once       # terminal 2
 ```
 ✅ **Expect:** a `TFMessage` listing many transforms. **Find the gripper frame**
@@ -82,7 +82,7 @@ Opening (`/open_gripper`) releases it.
 ## Step 4 — Run the auto-demonstrator (a few episodes)
 ```bash
 ros2 run agribot_labs 05_auto_demonstrate.py --episodes 4 --team team07 --hf-user me
-# alias:  05_d3 --episodes 4 --team team07 --hf-user me
+# alias:  ros2 run agribot_labs 05_* --episodes 4 --team team07 --hf-user me
 ```
 On start it prints the **left/right grasp points** it found. Watch the arm: it
 should approach → close on the red tomato → lift → swing → release, twice per
@@ -103,7 +103,7 @@ The cheapest data check: play a recorded episode back into the sim and watch it.
 ros2 run agribot_tools grasp_server                                  # terminal 3
 ros2 run agribot_labs 06_replay_episode.py --task C --team team07 \
     --hf-user me --episode 0 --spawn                                   # terminal 2
-# alias:  06_d3 --task C --team team07 --hf-user me --episode 0 --spawn
+# alias:  ros2 run agribot_labs 06_* --task C --team team07 --hf-user me --episode 0 --spawn
 ```
 ✅ **Expect:** the arm reproduces the recorded motion and (with `--spawn`) picks
 the red tomato. **Smooth motion ending in a grasp → your data is good.** Jerky /
@@ -116,10 +116,10 @@ training. (Without the sim, inspect the raw capture with LeRobot's viewer:
 ## Then: train and use it
 Exactly the same as the manual path — point the trainer at this dataset:
 ```bash
-finetune_d4 --task C --team team07 --hf-user me --steps 3000 --launch
+agr_finetune --task C --team team07 --hf-user me --steps 3000 --launch
 # when done:
 export VLA_LOCAL_CKPT=~/raise_checkpoints/smolvla_C_team07
-vla_d4 --task C --instruction "pick the red tomato"
+agr_vla --task C --instruction "pick the red tomato"
 ```
 Full details: [`HOW_TO_TRAIN_AND_USE.md`](./HOW_TO_TRAIN_AND_USE.md).
 The `grasp_server` must also be running during `vla_executor.py` so the trained

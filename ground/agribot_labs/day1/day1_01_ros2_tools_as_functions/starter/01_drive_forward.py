@@ -14,9 +14,9 @@ LEARN - A `Twist` has TWO 3-vectors: linear (m/s) and angular (rad/s).
       - A "stop" command is just an all-zeros Twist. Always send one
         at the end of every motion.
 
-Run while `raise-sim` is up:
+Run while `agr-sim ground` is up:
 
-    ros2 run agribot_labs 01_drive_forward.py    # or:  01_d1
+    ros2 run agribot_labs 01_drive_forward.py    # or:  ros2 run agribot_labs 01_*
 """
 
 import math

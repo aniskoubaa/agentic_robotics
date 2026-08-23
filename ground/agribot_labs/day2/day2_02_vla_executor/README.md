@@ -33,9 +33,9 @@ A VLA is just a function: `action = model(image, instruction, state)`.
 of the camera frame next to the numbers):
 
 ```bash
-vla_one_d4 --spawn                 # one call, every input/output explained
-vla_one_d4 --steps 5               # consecutive calls — see the action CHUNK stream out
-vla_one_d4 --spawn --execute       # publish the action: the arm actually moves
+agr_vla_one --spawn                 # one call, every input/output explained
+agr_vla_one --steps 5               # consecutive calls — see the action CHUNK stream out
+agr_vla_one --spawn --execute       # publish the action: the arm actually moves
 ```
 
 The `--execute` publish line, repeated at 10 Hz, IS the whole executor below.
@@ -43,10 +43,10 @@ The `--execute` publish line, repeated at 10 Hz, IS the whole executor below.
 ## How to run (the 2-minute payoff)
 
 ```bash
-# terminal 1 — the sim            sim_d2   (plant-row parking — the model expects it)
+# terminal 1 — the sim            agr-sim ground   (plant-row parking — the model expects it)
 # terminal 2 — the grasp server   grasp_d3        (must run — it IS the grasp)
 # terminal 3 — the executor (venv python; the alias handles it):
-vla_d4 --task C --spawn --instruction "pick the red tomato"
+agr_vla --task C --spawn --instruction "pick the red tomato"
 ```
 
 `--spawn` places a red + green tomato at the trained positions first
@@ -69,11 +69,11 @@ Fine-tuning takes ~**2 h** for the full 6000-step recipe (measured; 3000 ≈ 1 h
 for a quick try), so you *launch it and walk away*:
 
 ```bash
-finetune_d4 --task C --team team07 --hf-user me --steps 6000 --launch
+agr_finetune --task C --team team07 --hf-user me --steps 6000 --launch
 tail -f ~/raise_checkpoints/smolvla_C_team07.train.log        # watch it learn
 # when finished:
 export VLA_LOCAL_CKPT=~/raise_checkpoints/smolvla_C_team07/checkpoints/last/pretrained_model
-vla_d4 --task C --spawn
+agr_vla --task C --spawn
 ```
 
 Then A/B your model vs the reference over the same trials (below) and put the

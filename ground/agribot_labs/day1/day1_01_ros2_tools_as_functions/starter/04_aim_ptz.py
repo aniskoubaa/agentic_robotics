@@ -17,9 +17,9 @@ Watch the result in the phone teleop feed (http://<host>:5000) or run:
 
     ros2 run rqt_image_view rqt_image_view /ptz_camera/image_raw
 
-Run while `raise-sim` is up:
+Run while `agr-sim ground` is up:
 
-    ros2 run agribot_labs 04_aim_ptz.py        # or:  04_d1
+    ros2 run agribot_labs 04_aim_ptz.py        # or:  ros2 run agribot_labs 04_*
 """
 
 import math

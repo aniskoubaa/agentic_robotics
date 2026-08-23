@@ -41,12 +41,12 @@ varied* demonstrations efficiently.
 
 | # | Script | Alias | What it does / teaches |
 |---|--------|-------|------------------------|
-| 01 | `01_teleop.py` | `01_d3` | drive the arm+gripper from the keyboard (the publisher pattern, one level below Day 1) |
-| 02 | `02_read_streams.py` | `02_d3` | watch `/wrist_camera` + `/joint_states` live — the exact streams the VLA learns from (pre-flight check) |
-| 03 | `03_record.py` | `03_d3` | manual recording: fuse the streams into LeRobot episodes while YOU drive |
-| 05 | `05_auto_demonstrate.py` | `05_d3` | **hands-free recording**: the expert SCANS (looks above left, then right), picks the red tomato it SEES, side alternating — every grasp verified. Active perception! |
-| 06 | `06_replay_episode.py` | `06_d3` | **replay** a recorded episode into the sim — THE data check before training |
-| 04 | `04_upload.py` | `04_d3` | *(optional — multi-machine schools only; this edition trains locally)* |
+| 01 | `01_teleop.py` | `ros2 run agribot_labs 01_*` | drive the arm+gripper from the keyboard (the publisher pattern, one level below Day 1) |
+| 02 | `02_read_streams.py` | `ros2 run agribot_labs 02_*` | watch `/wrist_camera` + `/joint_states` live — the exact streams the VLA learns from (pre-flight check) |
+| 03 | `03_record.py` | `ros2 run agribot_labs 03_*` | manual recording: fuse the streams into LeRobot episodes while YOU drive |
+| 05 | `05_auto_demonstrate.py` | `ros2 run agribot_labs 05_*` | **hands-free recording**: the expert SCANS (looks above left, then right), picks the red tomato it SEES, side alternating — every grasp verified. Active perception! |
+| 06 | `06_replay_episode.py` | `ros2 run agribot_labs 06_*` | **replay** a recorded episode into the sim — THE data check before training |
+| 04 | `04_upload.py` | `ros2 run agribot_labs 04_*` | *(optional — multi-machine schools only; this edition trains locally)* |
 
 > ⚠️ **Venv rule:** scripts that touch LeRobot (03, 05, 06) run under the
 > lerobot venv python — **the aliases handle this automatically.** Plain
@@ -56,13 +56,13 @@ varied* demonstrations efficiently.
 
 ```bash
 # terminal 1 — the sim, PARKED AT THE PLANT ROW (Day-2 poses expect this spot)
-sim_d2                          # = raise-sim x:=-2.0 y:=2.15 yaw:=1.5708
+agr-sim ground                          # = agr-sim ground x:=-2.0 y:=2.15 yaw:=1.5708
 # terminal 2 — the grasp server (the sim's "grasp physics"; keep it running)
 grasp_d3
 # terminal 3 — collect 50 verified episodes, hands-free (~25 min)
-05_d3 --episodes 50 --team team07 --hf-user me
+ros2 run agribot_labs 05_* --episodes 50 --team team07 --hf-user me
 # then VERIFY the data by replaying an episode and watching the pick:
-06_d3 --task C --team team07 --hf-user me --episode 0 --spawn
+ros2 run agribot_labs 06_* --task C --team team07 --hf-user me --episode 0 --spawn
 ```
 
 Your dataset lands **inside the repo**: `AgriBot/datasets/me__raise_ripeness_sort_team07`.

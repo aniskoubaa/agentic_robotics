@@ -35,14 +35,14 @@ WHAT  The climax of Day-1 Lab-1. You type a GOAL in plain English; an
 ╚═══════════════════════════════════════════════════════════════════════════╝
 
 Needs all five tool servers running + OPENAI_API_KEY (in src/.env or env).
-The `10_d1` alias starts the servers for you. Manual:
+The `ros2 run agribot_labs 10_*` alias starts the servers for you. Manual:
 
     ros2 run agribot_tools gripper_server &
     ros2 run agribot_tools move_to_pose_server &
     ros2 run agribot_tools navigation_server &
     ros2 run agribot_tools detector_server &
     ros2 run agribot_tools inspector_server &
-    ros2 run agribot_labs 10_orchestrate.py     # or:  10_d1
+    ros2 run agribot_labs 10_orchestrate.py     # or:  ros2 run agribot_labs 10_*
 
 Try goals like:
     "drive to tomato row 1, aim the arm at the plant, and tell me if it's healthy"

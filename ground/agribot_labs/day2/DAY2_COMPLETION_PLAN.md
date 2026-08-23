@@ -22,7 +22,7 @@
 **Who:** you drive the sim; I debug from what it prints.
 **Steps:** `VERIFY_MANIPULATION.md` 1–5 — world poses flow → spawn works → grasp attaches → demonstrator runs → replay shows a clean pick.
 **Tunables to lock:** gripper-link name, `attach_radius`, `grasp_offset`, `GRASP_LEFT/RIGHT` + `POSE_HOME`.
-**Deliverable:** a handful of episodes that **replay as clean picks** (`06_d3 --spawn`).
+**Deliverable:** a handful of episodes that **replay as clean picks** (`ros2 run agribot_labs 06_* --spawn`).
 **Acceptance:** arm approaches → grasps red → lifts → places, repeatably, both L and R.
 **Effort:** ~1–2 h of live iteration. **Blocks:** Phases 2, 3, 5.
 **Risk:** frame names / grasp geometry differ from my offline guesses — expected; that's what this phase fixes.
@@ -30,14 +30,14 @@
 ## Phase 2 — Record a real dataset + one real fine-tune
 **Goal:** the **reference checkpoint** the default student path needs, and proof training works on the 4090.
 **Who:** you run it (GPU); I tune the recipe.
-**Steps:** `05_d3 --episodes 40` → `finetune_d4 --launch` (start `--steps 3000` to prove it, then a longer run). **Measure the wall-clock** and pin it into `DAY2_LAB_DESIGN.md §3.1` + `instructor.md`.
+**Steps:** `ros2 run agribot_labs 05_* --episodes 40` → `agr_finetune --launch` (start `--steps 3000` to prove it, then a longer run). **Measure the wall-clock** and pin it into `DAY2_LAB_DESIGN.md §3.1` + `instructor.md`.
 **Deliverable:** `~/raise_checkpoints/smolvla_C_...` + recorded real training time.
 **Acceptance:** training completes; loss decreases; checkpoint loads.
 **Effort:** ~30 min hands-on + hours background. **Needs:** Phase 1.
 
 ## Phase 3 — Executor end-to-end (the payoff)
 **Goal:** `vla_executor.py` drives the arm to a real pick from a typed instruction.
-**Steps:** `grasp_server` + `export VLA_LOCAL_CKPT=...` + `vla_d4 --task C --instruction "pick the red tomato"`. Replace the scaffold `grasped_and_lifted()` heuristic with real success (use `/grasp/state` from grasp_server — a clean signal).
+**Steps:** `grasp_server` + `export VLA_LOCAL_CKPT=...` + `agr_vla --task C --instruction "pick the red tomato"`. Replace the scaffold `grasped_and_lifted()` heuristic with real success (use `/grasp/state` from grasp_server — a clean signal).
 **Deliverable:** a working spoken-instruction pick + latency report.
 **Acceptance:** ≥ some success rate over a few instructions; ≤500 ms/action.
 **Effort:** ~1 h. **Needs:** Phase 2.

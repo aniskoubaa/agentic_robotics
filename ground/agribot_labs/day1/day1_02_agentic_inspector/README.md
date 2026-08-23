@@ -53,8 +53,8 @@ final field report          loop until finish_report OR step/time limit
 
 ## Prerequisites
 
-- `raise-sim` is running (Gazebo open, you see the agroforestry plot)
-- The five tool servers from Lab 1.1 are running (the `agent_d2` alias starts
+- `agr-sim ground` is running (Gazebo open, you see the agroforestry plot)
+- The five tool servers from Lab 1.1 are running (the `ros2 run agribot_labs agent.py` alias starts
   them for you)
 - `OPENAI_API_KEY` is set — in `raise_ros2_ws/src/.env` (gitignored) or the env
 
@@ -63,7 +63,7 @@ final field report          loop until finish_report OR step/time limit
 **A. One alias (recommended)** — starts all five servers, then the agent:
 
 ```bash
-agent_d2
+ros2 run agribot_labs agent.py
 ```
 
 **B. Manual** — five servers in the background, then the agent:

@@ -36,7 +36,7 @@ Usage:
     # Launch it in the background on the GPU box (fire-and-forget):
     ros2 run agribot_labs finetune_smolvla.py --task A --team team07 \
         --hf-user raiseschool --steps 6000 --launch
-    # or:  finetune_d4 ...
+    # or:  agr_finetune ...
 """
 
 import argparse

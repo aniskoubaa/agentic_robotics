@@ -28,7 +28,7 @@ Workflow (two terminals):
     Terminal 2:  ros2 run agribot_labs 03_record.py --task A --team team07 \
                      --hf-user raiseschool --episodes 30
     Then follow the prompts: ENTER to start an episode, ENTER to stop, keep/discard.
-    (or:  03_d3 ...)
+    (or:  ros2 run agribot_labs 03_* ...)
 """
 
 import argparse

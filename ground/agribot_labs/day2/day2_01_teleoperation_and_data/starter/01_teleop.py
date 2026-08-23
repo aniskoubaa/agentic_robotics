@@ -21,11 +21,11 @@ LEARN - The arm is 6 JointPositionController topics, one per joint:
       The joint names + gripper mimic map come from vla_client.base, so teleop,
       recording, and the VLA executor all agree on ONE command space.
 
-Run while `raise-sim` is up:
+Run while `agr-sim ground` is up:
 
     ros2 run agribot_labs 01_teleop.py            # arm only
     ros2 run agribot_labs 01_teleop.py --task B   # also enable base driving
-    # or:  01_d3
+    # or:  ros2 run agribot_labs 01_*
 """
 
 import argparse
@@ -114,7 +114,7 @@ class Teleop(Node):
             self.base_pub.publish(t)
         else:
             # Student report 2026-07-14: keys looked dead. Say WHY, loudly.
-            print('  (base driving is OFF — restart with:  01_d3 --task B)')
+            print('  (base driving is OFF — restart with:  ros2 run agribot_labs 01_* --task B)')
 
     def handle_key(self, k: str) -> bool:
         """Apply one keypress. Return False to quit."""

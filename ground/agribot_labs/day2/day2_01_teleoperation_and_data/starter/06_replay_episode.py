@@ -25,7 +25,7 @@ HOW   We read the episode's `action` column (6 joint targets + gripper) from the
       red (+ green) tomato there, then replays — so the GRASP reproduces too
       (grasp_server must be running).
 
-PREREQUISITES:  the sim (raise-sim).  For the grasp to reproduce, also:
+PREREQUISITES:  the sim (agr-sim ground).  For the grasp to reproduce, also:
     ros2 run agribot_tools grasp_server      # (alias: grasp_d3)
 
 Usage:
@@ -33,7 +33,7 @@ Usage:
     ros2 run agribot_labs 06_replay_episode.py --task C --team team07 --hf-user me --episode 0
     # replay AND recreate the tomatoes so the pick reproduces:
     ros2 run agribot_labs 06_replay_episode.py --task C --team team07 --hf-user me --episode 0 --spawn
-    # (alias: 06_d3 ...)
+    # (alias: ros2 run agribot_labs 06_* ...)
 """
 
 import argparse

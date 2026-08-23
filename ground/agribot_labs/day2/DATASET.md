@@ -48,7 +48,7 @@ itself. One command:
 ```bash
 # sim (headless works!)     ros2 launch agribot_bringup sim.launch.py headless:=true
 # the grasp                 ros2 run agribot_tools grasp_server
-# the demonstrator          05_d3 --episodes 50 --team ref
+# the demonstrator          ros2 run agribot_labs 05_* --episodes 50 --team ref
 ```
 
 Per episode, `05_auto_demonstrate.py` does:
@@ -120,7 +120,7 @@ print(ds.num_episodes, 'episodes,', ds.num_frames, 'frames @', ds.fps, 'Hz')
 PY
 
 # 2. replay an episode into the sim and WATCH it (grasp_server running)
-06_d3 --task C --team ref --episode 0 --spawn
+ros2 run agribot_labs 06_* --task C --team ref --episode 0 --spawn
 ```
 
 If the replay looks like a clean pick — the data is good; train on it.
@@ -143,19 +143,19 @@ Anything that imports lerobot (record / replay / train / execute) runs with
 ## 6. Next step: train on it
 
 ```bash
-finetune_d4 --task C --team ref --hf-user raiseschool --steps 3000 --launch
+agr_finetune --task C --team ref --hf-user raiseschool --steps 3000 --launch
 tail -f ~/raise_checkpoints/smolvla_C_ref/train.log
 # when done:
 export VLA_LOCAL_CKPT=~/raise_checkpoints/smolvla_C_ref
-vla_d4 --task C --instruction "pick the red tomato"
+agr_vla --task C --instruction "pick the red tomato"
 ```
 
 ## 7. Reproduce / extend
 
-- **More episodes:** `05_d3 --episodes 50 --team ref2`
+- **More episodes:** `ros2 run agribot_labs 05_* --episodes 50 --team ref2`
 - **More variety:** add jitter to the two grasp poses in `05_auto_demonstrate.py`
   (`GRASP_LEFT/RIGHT`), or add a third spawn point.
-- **A row-conditioned task:** `05_d3 --row 2` weaves "in row 2" into the
+- **A row-conditioned task:** `ros2 run agribot_labs 05_* --row 2` weaves "in row 2" into the
   instruction — the hook for the mobile-manipulation extension (Task B).
 - Design context: [`DAY2_LAB_DESIGN.md`](./DAY2_LAB_DESIGN.md) ·
   live-sim tuning: [`VERIFY_MANIPULATION.md`](./VERIFY_MANIPULATION.md)

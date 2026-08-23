@@ -24,10 +24,10 @@ WHY   Jogging six joints by keyboard to pick a tomato is painful, and the sim ha
       motion.
 
 PREREQUISITES (three things must be running):
-    1. the sim:           raise-sim
+    1. the sim:           agr-sim ground
     2. the grasp server:  ros2 run agribot_tools grasp_server
     3. this script:       ros2 run agribot_labs 05_auto_demonstrate.py --episodes 30
-                          (or:  05_d3 --episodes 30)
+                          (or:  ros2 run agribot_labs 05_* --episodes 30)
 
 ⚠ TUNE IN THE LIVE SIM (cannot be verified offline): the LEFT/RIGHT grasp joint
   poses below, the gripper link name, and the grasp_server's attach_radius. The
@@ -268,7 +268,7 @@ def main():
         node.destroy_node(); rclpy.try_shutdown(); sys.exit(1)
     print(f'  left grasp point  : {tuple(round(v,3) for v in left_pt)}')
     print(f'  right grasp point : {tuple(round(v,3) for v in right_pt)}\n')
-    # The trained model + these poses expect the plant-row parking (sim_d2).
+    # The trained model + these poses expect the plant-row parking (agr-sim ground).
     check_parking(lambda: gz_utils.get_model_world_pose('agribot_robot', args.world))
 
     saved = 0
@@ -352,7 +352,7 @@ def main():
                   f'Re-run without --dry-run to record.')
         else:
             print(f'\nDone. {saved} episodes in {root}.')
-            print(f'Train on it:  finetune_d4 --task C --team {args.team} --hf-user {args.hf_user} --launch')
+            print(f'Train on it:  agr_finetune --task C --team {args.team} --hf-user {args.hf_user} --launch')
 
 
 if __name__ == '__main__':

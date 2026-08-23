@@ -39,7 +39,7 @@ Before running this, start the server in another terminal:
 
 Then run this client:
 
-    ros2 run agribot_labs 05_call_gripper.py    # or:  05_d1
+    ros2 run agribot_labs 05_call_gripper.py    # or:  ros2 run agribot_labs 05_*
 """
 
 import sys

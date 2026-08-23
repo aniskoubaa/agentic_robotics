@@ -56,7 +56,7 @@ Before running this, start the server in another terminal:
 
 Then run this client:
 
-    ros2 run agribot_labs 07_call_navigation.py    # or:  07_d1
+    ros2 run agribot_labs 07_call_navigation.py    # or:  ros2 run agribot_labs 07_*
 """
 
 import sys

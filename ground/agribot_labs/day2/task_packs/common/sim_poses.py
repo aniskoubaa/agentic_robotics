@@ -24,7 +24,7 @@ by these poses.
 
 Robot parking (poses are tuned for THIS spot — re-park ⇒ re-record):
 
-    raise-sim x:=-2.0 y:=2.15 yaw:=1.5708     # facing the plant at (-2, 3)
+    agr-sim ground x:=-2.0 y:=2.15 yaw:=1.5708     # facing the plant at (-2, 3)
 """
 
 POSE_HOME = [0.0, -1.5708, 1.5708, -1.5708, -1.5708, 0.0]
@@ -74,5 +74,5 @@ def check_parking(get_pose_fn, log_fn=print, tol=0.5):
     dx, dy = x - PARK['x'], y - PARK['y']
     if (dx * dx + dy * dy) ** 0.5 > tol:
         log_fn(f"⚠ robot is parked at ({x:.2f}, {y:.2f}) but Day-2 expects "
-               f"({PARK['x']}, {PARK['y']}) — launch the sim with:  sim_d2   "
-               f"(= raise-sim x:={PARK['x']} y:={PARK['y']} yaw:={PARK['yaw']})")
+               f"({PARK['x']}, {PARK['y']}) — launch the sim with:  agr-sim ground   "
+               f"(= agr-sim ground x:={PARK['x']} y:={PARK['y']} yaw:={PARK['yaw']})")

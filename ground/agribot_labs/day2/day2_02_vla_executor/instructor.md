@@ -5,9 +5,9 @@
 ## Pre-lab checklist
 1. **The reference checkpoint exists** at
    `~/raise_checkpoints/smolvla_C_ref/checkpoints/003000/pretrained_model` on
-   the demo box (reproduce: `finetune_d4 --task C --team ref --hf-user raiseschool --steps 3000 --launch`, ~55 min — see `AgriBot/checkpoints/README.md`).
+   the demo box (reproduce: `agr_finetune --task C --team ref --hf-user raiseschool --steps 3000 --launch`, ~55 min — see `AgriBot/checkpoints/README.md`).
 2. Dry payoff run before students arrive:
-   `vla_d4 --task C --spawn` → expect `SUCCESS (red tomato grasped)` in ≲40 steps.
+   `agr_vla --task C --spawn` → expect `SUCCESS (red tomato grasped)` in ≲40 steps.
 3. `grasp_d3` running (it is the grasp physics — without it nothing picks).
 4. If students will train their own: the GPU fits ONE training at a time
    (10.8/16 GB) — queue them, or share the reference checkpoint.
@@ -15,10 +15,10 @@
 ## Timing plan (90 min)
 | min | activity |
 |---|---|
-| 0–10 | the punchline first: run `vla_d4 --task C --spawn` live — it picks |
+| 0–10 | the punchline first: run `agr_vla --task C --spawn` live — it picks |
 | 10–25 | unpack the loop (see→act→truth) + the backend-blind design |
 | 25–40 | everyone runs the executor, flips `--red-side`, tries wordings |
-| 40–55 | launch team fine-tunes (`finetune_d4 --launch`) — background! |
+| 40–55 | launch team fine-tunes (`agr_finetune --launch`) — background! |
 | 55–75 | run `evaluator/evaluate.py --trials 10` with the reference; teams compare when their checkpoints land (or after the session) |
 | 75–90 | the two inference-bug stories (below) + wrap-up |
 

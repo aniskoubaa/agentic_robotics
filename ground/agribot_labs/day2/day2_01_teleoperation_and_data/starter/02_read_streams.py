@@ -19,9 +19,9 @@ LEARN - observation.image  <- /wrist_camera/image_raw  (sensor_msgs/Image)
       - The "state" is the 6 arm joints + the gripper knuckle, pulled out of
         /joint_states by name (the order matters — it's vla_client's UR5E_JOINTS).
 
-Run while `raise-sim` is up:
+Run while `agr-sim ground` is up:
 
-    ros2 run agribot_labs 02_read_streams.py     # or:  02_d3
+    ros2 run agribot_labs 02_read_streams.py     # or:  ros2 run agribot_labs 02_*
 """
 
 import sys

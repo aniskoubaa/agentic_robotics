@@ -43,14 +43,14 @@ The tools the agent can use (each wraps a ROS 2 Trigger service from Lab 1.1):
     finish_report(summary)     → (no ROS call) end the mission
 
 Needs the five tool servers running + OPENAI_API_KEY (in src/.env or env).
-The `agent_d2` alias starts the servers for you. Manual:
+The `ros2 run agribot_labs agent.py` alias starts the servers for you. Manual:
 
     ros2 run agribot_tools gripper_server &
     ros2 run agribot_tools move_to_pose_server &
     ros2 run agribot_tools navigation_server &
     ros2 run agribot_tools detector_server &
     ros2 run agribot_tools inspector_server &
-    ros2 run agribot_labs agent.py              # or:  agent_d2
+    ros2 run agribot_labs agent.py              # or:  ros2 run agribot_labs agent.py
 
 Try missions (see starter/mission_prompts.md for the graded set):
     "inspect both tomato rows, left and right, and tell me which plants look unhealthy"

@@ -22,7 +22,7 @@ Run after recording:
 
     ros2 run agribot_labs 04_upload.py --task A --team team07 \
         --server http://gpu-box.lan:8000
-    # or:  04_d3 ...
+    # or:  ros2 run agribot_labs 04_* ...
 """
 
 import argparse

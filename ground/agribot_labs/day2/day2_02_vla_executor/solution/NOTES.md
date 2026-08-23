@@ -10,12 +10,12 @@ not filling code holes.
 ## The known-good sequence + expected outputs (all measured 2026-07-04)
 
 ```bash
-raise-sim  &  grasp_d3                                   # sim + grasp (robot parked per sim_poses.PARK)
-05_d3 --episodes 50 --team ref --hf-user raiseschool     # → 50/50 grasp OK, ~28 min (scan choreography)
-06_d3 --task C --team ref --episode 0 --spawn            # → grasped tomato_red_0 ... released
+agr-sim ground  &  grasp_d3                                   # sim + grasp (robot parked per sim_poses.PARK)
+ros2 run agribot_labs 05_* --episodes 50 --team ref --hf-user raiseschool     # → 50/50 grasp OK, ~28 min (scan choreography)
+ros2 run agribot_labs 06_* --task C --team ref --episode 0 --spawn            # → grasped tomato_red_0 ... released
 validate_dataset.py --task C --team ref                  # → 100/100
-finetune_d4 --task C --team ref --steps 6000 --launch    # → ~2 h
-vla_d4 --task C --spawn                                  # → SUCCESS (~35 steps red-L / ~60 red-R incl. scan)
+agr_finetune --task C --team ref --steps 6000 --launch    # → ~2 h
+agr_vla --task C --spawn                                  # → SUCCESS (~35 steps red-L / ~60 red-R incl. scan)
 evaluate.py --task C --trials 8 --max-steps 120          # → reference: 100/100 (greenhouse scenes)
 ```
 

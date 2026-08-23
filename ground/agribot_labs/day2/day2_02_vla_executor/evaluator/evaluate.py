@@ -14,7 +14,7 @@ Each trial recreates the training distribution: red + green tomato at the two
 known grasp points (shared with the auto-demonstrator via sim_poses.py), red
 side alternating L/R, arm reset to HOME — then the policy runs the whole pick.
 
-PREREQUISITES: the sim (raise-sim / headless) + grasp_server running, and the
+PREREQUISITES: the sim (agr-sim ground / headless) + grasp_server running, and the
 checkpoint selected via VLA_LOCAL_CKPT. Run with the lerobot venv python:
 
     export VLA_LOCAL_CKPT=~/raise_checkpoints/smolvla_C_ref

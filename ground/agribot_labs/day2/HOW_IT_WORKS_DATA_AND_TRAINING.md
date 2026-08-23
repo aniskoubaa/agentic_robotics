@@ -144,7 +144,7 @@ The pretrained vision-language understanding is largely kept (it already knows
 what "red" looks like); training mostly teaches the **action expert** how *our*
 UR5e moves. That's why ~50 episodes can be enough.
 
-## 2.3 The actual command (what `finetune_d4` runs)
+## 2.3 The actual command (what `agr_finetune` runs)
 
 ```bash
 ~/raise_venvs/lerobot/bin/lerobot-train \
@@ -213,13 +213,13 @@ cannot share a Python. So LeRobot lives in its own venv
 (`~/raise_venvs/lerobot`), and all Day-2 scripts convert camera images with
 **pure numpy** (`vla_client/ros_image.py`) instead of cv_bridge, so they run in
 either Python. Anything importing lerobot runs with the **venv python** — the
-`03_d3 / 05_d3 / 06_d3 / finetune_d4 / vla_d4` aliases do this automatically.
+`ros2 run agribot_labs 03_* / ros2 run agribot_labs 05_* / ros2 run agribot_labs 06_* / agr_finetune / agr_vla` aliases do this automatically.
 
 ## 2.7 After training: closing the loop
 
 ```bash
 export VLA_LOCAL_CKPT=~/raise_checkpoints/smolvla_C_ref
-vla_d4 --task C --instruction "pick the red tomato"     # grasp_server running!
+agr_vla --task C --instruction "pick the red tomato"     # grasp_server running!
 ```
 
 The executor captures the wrist image → asks the fine-tuned model → streams the

@@ -27,15 +27,15 @@ LEARN - make_vla_client() returns a BACKEND-BLIND client. Default is in-process
       - Every client.act() call is timed against the ≤500 ms budget (graded).
 
 PREREQUISITES (three things):
-    1. the sim:          raise-sim   (or headless — see VERIFY_MANIPULATION.md)
+    1. the sim:          agr-sim ground   (or headless — see VERIFY_MANIPULATION.md)
     2. the grasp server: ros2 run agribot_tools grasp_server    (grasp_d3)
     3. a checkpoint:     export VLA_LOCAL_CKPT=<...>/pretrained_model
        (if unset: the local reference checkpoint when installed, else the
         PUBLIC Hugging Face copy is downloaded automatically — no key needed.
         For the flail demo, explicitly set VLA_LOCAL_CKPT=lerobot/smolvla_base.)
 
-Run WITH THE LEROBOT VENV PYTHON (the vla_d4 alias does this for you):
-    vla_d4 --task C --spawn --instruction "pick the red tomato"
+Run WITH THE LEROBOT VENV PYTHON (the agr_vla alias does this for you):
+    agr_vla --task C --spawn --instruction "pick the red tomato"
     # --spawn places a red+green tomato at the trained grasp points first.
     # Manual equivalent:
     #   ~/raise_venvs/lerobot/bin/python3 vla_executor.py --task C --spawn

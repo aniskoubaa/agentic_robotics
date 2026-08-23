@@ -15,9 +15,9 @@ LEARN - sensor_msgs/LaserScan is metadata (angle_min, angle_max, ...) +
       - One-shot reads use `spin_once`; a live stream uses `spin` in a
         callback.
 
-Run while `raise-sim` is up:
+Run while `agr-sim ground` is up:
 
-    ros2 run agribot_labs 02_read_lidar.py     # or:  02_d1
+    ros2 run agribot_labs 02_read_lidar.py     # or:  ros2 run agribot_labs 02_*
 """
 
 import math
