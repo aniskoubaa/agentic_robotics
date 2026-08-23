@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<!-- Author: Prof. Anis Koubaa <anis.koubaa@gmail.com> -->
+<!--
+  Mounting plate for the UR5e on top of the Husky A200.
+  Used by raise2026_robot.urdf.xacro.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="husky_arm_mount" params="parent *origin">
+
+    <joint name="${parent}_to_arm_mount" type="fixed">
+      <xacro:insert_block name="origin"/>
+      <parent link="${parent}"/>
+      <child link="arm_mount_plate"/>
+    </joint>
+
+    <link name="arm_mount_plate">
+      <visual>
+        <geometry>
+          <box size="0.30 0.30 0.02"/>
+        </geometry>
+        <material name="mount_grey">
+          <color rgba="0.60 0.60 0.60 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.30 0.30 0.02"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="2.0"/>
+        <inertia ixx="0.015" ixy="0" ixz="0" iyy="0.015" iyz="0" izz="0.030"/>
+      </inertial>
+    </link>
+
+  </xacro:macro>
+
+</robot>

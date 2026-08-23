@@ -1,0 +1,33 @@
+# Author: Prof. Anis Koubaa <anis.koubaa@gmail.com>
+# RAISE 2026 — Task Pack B: Mobile manipulation (Husky drives + UR5e picks).
+# The whole-robot task. Most impressive, highest risk in a student slot. This is
+# Task A plus a base-drive phase, so the Action carries a `base` field and demos
+# have two phases (approach, then pick). Pre-validate heavily before using it.
+
+name: Mobile manipulation (drive to the plant, then pick)
+summary: >
+  The tomato plant is a short drive away. The Husky must approach it, then the
+  UR5e picks a tomato. The policy controls BOTH the base (cmd_vel) and the arm,
+  so the action space gains a `base` head on top of Task A's joints+gripper.
+
+uses_base: true
+recommended_episodes: 40          # two phases (drive + pick) need more coverage than A
+repo_slug: raise_mobile_manip
+
+instructions:
+  - "go to the plant and pick a tomato"
+  - "drive to the tomato plant and harvest one"
+  - "approach the plant and pick the tomato"
+  - "go pick a tomato from the plant"
+
+demo_recipe:
+  - "Start the Husky ~1.5-2 m from the plant, arm stowed, gripper OPEN."
+  - "PHASE 1 (drive): teleop the base toward the plant; stop in arm reach, plant centered in the wrist camera."
+  - "PHASE 2 (pick): run the Task-A grasp — above, lower, CLOSE, lift, release."
+  - "Vary the START heading/distance of the Husky across episodes (drive diversity)."
+  - "Keep the base STILL during the pick phase so the two phases stay separable."
+
+success_rule: >
+  The Husky stops within arm reach of the plant AND the UR5e grasps and lifts a
+  tomato. Scored per scenario in scenarios.yaml; driving past the plant or
+  stopping out of reach = failure.

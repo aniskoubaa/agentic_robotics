@@ -1,0 +1,35 @@
+# Author: Prof. Anis Koubaa <anis.koubaa@gmail.com>
+# RAISE 2026 — Task Pack A: Tabletop tomato pick-and-place (UR5e only).
+# The reliable core task. Simplest signal, cleanest fine-tune, lowest risk in a
+# 90-min slot. Build this one first — C and B extend it.
+
+name: Tabletop tomato pick-and-place
+summary: >
+  One tomato sits on the table in front of the UR5e. Pick it up and place it in
+  the bin. Arm + gripper only; no driving, no distractors. The cleanest possible
+  signal for a first VLA fine-tune.
+
+uses_base: false
+recommended_episodes: 30
+repo_slug: raise_tabletop_pick
+
+# Language the demonstrations (and the policy) must cover. Keep it low-variety:
+# Task A is about a clean grasp, not language grounding (that's Task C).
+instructions:
+  - "pick the tomato"
+  - "pick up the tomato"
+  - "pick up the tomato and place it in the bin"
+  - "grab the tomato and drop it in the basket"
+
+# Teleop steps for ONE good episode (shown to students in Lab 2.1).
+demo_recipe:
+  - "Start with the arm at 'home' and the gripper OPEN."
+  - "Move above the tomato; keep it centered in the wrist camera."
+  - "Lower until the fingers straddle the tomato."
+  - "CLOSE the gripper; pause ~0.5 s so the grasp settles."
+  - "Lift ~15 cm, move over the bin, OPEN to release."
+  - "Vary the tomato's start position across episodes (this is graded as diversity)."
+
+success_rule: >
+  Gripper closed AND the tomato lifted above the table threshold (then released
+  over the bin). Scored per scenario in scenarios.yaml.

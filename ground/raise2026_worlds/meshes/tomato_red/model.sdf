@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!-- Author: Prof. Anis Koubaa <anis.koubaa@gmail.com> -->
+<!--
+  Graspable RIPE (red) tomato. One dynamic link, a small sphere with collision
+  so the gripper fingers can sit around it. Low mass so teleporting it to follow
+  the gripper (the grasp_server's "fake grasp") never destabilises physics.
+  Color matches the ripe fruit on tomato_plant (red).
+-->
+<sdf version="1.10">
+  <model name="tomato_red">
+    <link name="fruit">
+      <!-- Gravity OFF: the fruit stays exactly where it is spawned (at the
+           gripper's reachable grasp point) instead of falling to the floor.
+           This is what lets the demonstrator place it with no table and no IK. -->
+      <gravity>false</gravity>
+      <inertial>
+        <mass>0.05</mass>
+        <inertia>
+          <ixx>2.45e-5</ixx><iyy>2.45e-5</iyy><izz>2.45e-5</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="v">
+        <geometry><sphere><radius>0.035</radius></sphere></geometry>
+        <material>
+          <ambient>0.75 0.10 0.05 1</ambient>
+          <diffuse>0.95 0.18 0.08 1</diffuse>
+          <specular>0.5 0.1 0.1 1</specular>
+        </material>
+      </visual>
+      <collision name="c">
+        <geometry><sphere><radius>0.035</radius></sphere></geometry>
+      </collision>
+    </link>
+  </model>
+</sdf>

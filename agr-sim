@@ -32,12 +32,16 @@
 #      "error while loading shared libraries: libgz-utils2.so.2".
 #
 # Usage:
-#   agr-sim                                   # one x500, GUI
-#   agr-sim headless:=true                    # no GUI
-#   agr-sim airframe:=rc_cessna               # fixed-wing
-#   agr-sim --multi count:=3                  # three vehicles
-#   agr-sim --multi airframes:=x500,standard_vtol,rc_cessna
-#   agr-stop                                  # tear it all down
+#   agr-sim                                   # UAV: one x500, GUI
+#   agr-sim world:=agr_defense                # UAV: any single.launch.py arg
+#   agr-sim uav airframe:=rc_cessna           # UAV, explicitly
+#   agr-sim uav --multi count:=3              # UAV: three vehicles
+#   agr-sim ground                            # GROUND: Husky in the greenhouse
+#   agr-sim ground world:=greenhouse_2026_lite.sdf
+#   agr-stop                                  # tear down whichever is running
+#
+# The platform word is optional and defaults to `uav`, so existing UAV commands
+# keep working unchanged.
 set -euo pipefail
 
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
@@ -50,10 +54,29 @@ RUN_USER="${USER:-$(id -un)}"
 AGR_WS="${AGR_WS:-${RUN_HOME}/ros2_ws}"
 AGR_ROS_DISTRO="${AGR_ROS_DISTRO:-jazzy}"
 
-LAUNCH_FILE="single.launch.py"
-if [[ "${1:-}" == "--multi" ]]; then LAUNCH_FILE="multi.launch.py"; shift; fi
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-  sed -n '2,30p' "$SCRIPT_PATH" | sed 's/^#\s\?//'; exit 0
+  sed -n '2,34p' "$SCRIPT_PATH" | sed 's/^#\s\?//'; exit 0
+fi
+
+# ── platform dispatch ───────────────────────────────────────────────────────
+# UAV and ground are entirely separate stacks: different simulator entry point
+# (PX4 owns Gazebo for UAV; ros_gz spawns for ground), different robots,
+# different labs. They share only agr_core and this wrapper, which is the whole
+# point of keeping them in separate subtrees. Nothing here loads the other
+# platform's packages.
+PLATFORM="uav"
+case "${1:-}" in
+  uav|ground) PLATFORM="$1"; shift ;;
+esac
+
+if [[ "$PLATFORM" == "ground" ]]; then
+  LAUNCH_PKG="raise2026_bringup"
+  LAUNCH_FILE="sim.launch.py"
+  [[ "${1:-}" == "--world-only" ]] && { LAUNCH_FILE="world_only.launch.py"; shift; }
+else
+  LAUNCH_PKG="agr_uav_bringup"
+  LAUNCH_FILE="single.launch.py"
+  [[ "${1:-}" == "--multi" ]] && { LAUNCH_FILE="multi.launch.py"; shift; }
 fi
 
 if [[ ! -f "${AGR_WS}/install/setup.bash" ]]; then
@@ -106,11 +129,12 @@ exec env "${unset_args[@]}" \
     DISPLAY="${DISPLAY:-:0}" \
     XAUTHORITY="${XAUTHORITY:-/run/user/$(id -u)/gdm/Xauthority}" \
     HOME="${RUN_HOME}" USER="${RUN_USER}" \
-    AGR_WS="${AGR_WS}" AGR_ROS_DISTRO="${AGR_ROS_DISTRO}" LAUNCH_FILE="${LAUNCH_FILE}" \
+    AGR_WS="${AGR_WS}" AGR_ROS_DISTRO="${AGR_ROS_DISTRO}" \
+    LAUNCH_PKG="${LAUNCH_PKG}" LAUNCH_FILE="${LAUNCH_FILE}" \
     "${PRIME_VARS[@]}" "${QT_VARS[@]}" \
   bash -c '
     set +u
     source "/opt/ros/${AGR_ROS_DISTRO}/setup.bash"
     source "${AGR_WS}/install/setup.bash"
-    exec ros2 launch agr_uav_bringup "${LAUNCH_FILE}" "$@"
+    exec ros2 launch "${LAUNCH_PKG}" "${LAUNCH_FILE}" "$@"
   ' bash "$@"

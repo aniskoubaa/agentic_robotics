@@ -1,0 +1,37 @@
+# Author: Prof. Anis Koubaa <anis.koubaa@gmail.com>
+# RAISE 2026 — Task Pack C: Ripeness sorting (pick ripe, leave unripe).
+# Same arm/gripper as Task A, but now the INSTRUCTION selects the target among
+# look-alike distractors. This is the real language-grounding lesson: same scene,
+# different word -> different tomato. Needs more, more-varied demos than A.
+
+name: Ripeness sorting (pick the ripe tomato)
+summary: >
+  Several tomatoes sit on the table — some ripe (red), some unripe (green). Pick
+  ONLY the one the instruction names and leave the rest. Tests whether the VLA
+  grounds language + color in its action, not just "grasp the nearest blob".
+
+uses_base: false
+recommended_episodes: 50          # more than A: must cover both colors and which-is-target
+repo_slug: raise_ripeness_sort
+
+# Higher language variety on purpose — the policy must learn that the ADJECTIVE
+# decides the target. Demos must cover both "pick ripe" and "pick green" cases.
+instructions:
+  - "pick the ripe tomato"
+  - "pick the red tomato, leave the green ones"
+  - "harvest only the ripe one"
+  - "pick the unripe green tomato"
+  - "leave the ripe one and pick a green tomato"
+
+demo_recipe:
+  - "Spawn a mix: at least one ripe (red) and one unripe (green) tomato."
+  - "Read the instruction; identify the TARGET color it names."
+  - "Move above the target tomato (the wrong-color ones are distractors — ignore them)."
+  - "Lower, CLOSE the gripper, pause, lift, release over the bin."
+  - "Across episodes, vary WHICH color is the target and the layout of distractors."
+  - "Balance the dataset: roughly equal 'pick ripe' and 'pick green' episodes."
+
+success_rule: >
+  The CORRECT-COLOR tomato (the one the instruction names) is grasped and lifted,
+  AND no wrong-color tomato is displaced. Picking the wrong color = failure even
+  if the grasp itself succeeds.

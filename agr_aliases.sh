@@ -60,15 +60,30 @@ alias agr_status='agr_echo vehicle_status'
 alias agr_pos='agr_echo vehicle_local_position'
 alias agr_batt='agr_echo battery_status'
 
+# ── ground platform (RAISE 2026 stack, unmodified) ──────────────────────────
+alias agr_ground='agr-sim ground'
+alias agr_ground_lite='agr-sim ground world:=greenhouse_2026_lite.sdf'
+alias agr_drive='ros2 run raise2026_teleop teleop_keyboard'
+alias agr_cam='ros2 run raise2026_teleop camera_view'
+alias agr_ground_topics='ros2 topic list | grep -E "cmd_vel|scan|camera|joint_states|odom"'
+
 agr_help() {
   cat <<'HELP'
 Agentic Robotics — UAV track
 
-  run        agr-sim                       one x500, Gazebo GUI
+  UAV        agr-sim                       one x500, Gazebo GUI
              agr-sim headless:=true        no GUI
+             agr-sim world:=agr_city       urban world
+             agr-sim world:=agr_defense    secured installation
              agr-sim airframe:=rc_cessna   fixed-wing (cannot hover)
-             agr-sim --multi count:=3      three vehicles
-             agr-stop                      SIGINT then SIGKILL
+             agr-sim uav --multi count:=3  three vehicles
+
+  GROUND     agr-sim ground                Husky in the greenhouse
+             agr_ground_lite               lighter world (CPU-only machines)
+             agr_drive                     keyboard teleop
+             agr_cam                       camera view
+
+  stop       agr-stop                      SIGINT then SIGKILL, either stack
 
   build      agr-build                     colcon with the correct python
              agr-build --packages-select agr_uav_tools

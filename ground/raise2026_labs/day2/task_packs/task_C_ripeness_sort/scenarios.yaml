@@ -1,0 +1,28 @@
+# Author: Prof. Anis Koubaa <anis.koubaa@gmail.com>
+# RAISE 2026 — Task C grading scenarios: 5 instructions x 3 layouts.
+# Each layout fixes which colors are present and where; the evaluator checks that
+# the CORRECT-COLOR target was picked (wrong color = failure, see pack.yaml).
+
+scenarios:
+  - id: C1
+    instruction: "pick the ripe tomato"
+    layouts: [ripe_left_green_right, ripe_right_green_left, ripe_center_two_green]
+  - id: C2
+    instruction: "pick the red tomato, leave the green ones"
+    layouts: [ripe_center_two_green, ripe_left_green_right, two_ripe_one_green]
+  - id: C3
+    instruction: "harvest only the ripe one"
+    layouts: [ripe_right_green_left, ripe_center_two_green, ripe_left_green_right]
+  - id: C4
+    instruction: "pick the unripe green tomato"
+    layouts: [ripe_left_green_right, ripe_right_green_left, two_ripe_one_green]
+  - id: C5
+    instruction: "leave the ripe one and pick a green tomato"
+    layouts: [ripe_center_two_green, two_ripe_one_green, ripe_right_green_left]
+
+# Layouts: list of (color, [x, y]) spawns relative to the table centre (metres).
+layouts:
+  ripe_left_green_right:  [[red, [-0.12, 0.0]], [green, [0.12, 0.0]]]
+  ripe_right_green_left:  [[red, [0.12, 0.0]],  [green, [-0.12, 0.0]]]
+  ripe_center_two_green:  [[red, [0.0, 0.0]],   [green, [-0.14, 0.06]], [green, [0.14, 0.06]]]
+  two_ripe_one_green:     [[red, [-0.1, 0.0]],  [red, [0.1, 0.0]],      [green, [0.0, 0.12]]]

@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<!-- Author: Prof. Anis Koubaa <anis.koubaa@gmail.com> -->
+<sdf version="1.10">
+  <model name="tomato_plant_wilted">
+    <static>true</static>
+
+    <!-- Same pot + dry soil top -->
+    <link name="pot">
+      <pose>0 0 0.075 0 0 0</pose>
+      <visual name="v"><geometry><cylinder><radius>0.13</radius><length>0.15</length></cylinder></geometry>
+        <material><ambient>0.30 0.20 0.13 1</ambient><diffuse>0.45 0.28 0.18 1</diffuse></material>
+      </visual>
+      <collision name="c"><geometry><cylinder><radius>0.13</radius><length>0.15</length></cylinder></geometry></collision>
+    </link>
+    <link name="pot_soil">
+      <pose>0 0 0.148 0 0 0</pose>
+      <visual name="v"><geometry><cylinder><radius>0.115</radius><length>0.01</length></cylinder></geometry>
+        <material><ambient>0.45 0.35 0.20 1</ambient><diffuse>0.55 0.42 0.25 1</diffuse></material>
+      </visual>
+    </link>
+
+    <!-- Stake -->
+    <link name="stake">
+      <pose>0 0 0.75 0 0 0</pose>
+      <visual name="v"><geometry><cylinder><radius>0.012</radius><length>1.2</length></cylinder></geometry>
+        <material><ambient>0.35 0.25 0.15 1</ambient><diffuse>0.55 0.40 0.25 1</diffuse></material>
+      </visual>
+    </link>
+
+    <!-- Brown/yellowing stem (smaller, broken) -->
+    <link name="stem">
+      <pose>0.015 0 0.50 0.20 0 0</pose>           <!-- tilted = drooping -->
+      <visual name="v"><geometry><cylinder><radius>0.015</radius><length>0.75</length></cylinder></geometry>
+        <material><ambient>0.45 0.40 0.15 1</ambient><diffuse>0.60 0.55 0.20 1</diffuse></material>
+      </visual>
+    </link>
+
+    <!-- Drooping yellow-brown leaves (lower positions, hanging) -->
+    <link name="leaf_droop_1">
+      <pose>-0.14 0.04 0.45 1.0 0 0.3</pose>
+      <visual name="v"><geometry><sphere><radius>0.11</radius></sphere></geometry>
+        <material><ambient>0.55 0.42 0.12 1</ambient><diffuse>0.70 0.55 0.18 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="leaf_droop_2">
+      <pose>0.13 -0.05 0.50 -0.9 0 -0.2</pose>
+      <visual name="v"><geometry><sphere><radius>0.10</radius></sphere></geometry>
+        <material><ambient>0.50 0.38 0.10 1</ambient><diffuse>0.65 0.50 0.15 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="leaf_brown_1">
+      <pose>-0.08 -0.10 0.65 0.7 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.09</radius></sphere></geometry>
+        <material><ambient>0.42 0.28 0.10 1</ambient><diffuse>0.55 0.38 0.15 1</diffuse></material>     <!-- brown -->
+      </visual>
+    </link>
+    <link name="leaf_brown_2">
+      <pose>0.09 0.10 0.78 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.08</radius></sphere></geometry>
+        <material><ambient>0.38 0.25 0.08 1</ambient><diffuse>0.50 0.35 0.12 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="leaf_yellow_top">
+      <pose>0.00 0.00 1.00 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.13</radius></sphere></geometry>
+        <material><ambient>0.55 0.50 0.18 1</ambient><diffuse>0.72 0.65 0.22 1</diffuse></material>
+      </visual>
+    </link>
+
+    <!-- One shriveled brown leftover fruit on the ground beside the pot -->
+    <link name="dropped_fruit">
+      <pose>0.18 0.05 0.04 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.030</radius></sphere></geometry>
+        <material><ambient>0.30 0.15 0.08 1</ambient><diffuse>0.42 0.22 0.12 1</diffuse></material>
+      </visual>
+    </link>
+
+    <joint name="j_stake" type="fixed"><parent>pot</parent><child>stake</child></joint>
+    <joint name="j_soil"  type="fixed"><parent>pot</parent><child>pot_soil</child></joint>
+    <joint name="j_stem"  type="fixed"><parent>stake</parent><child>stem</child></joint>
+    <joint name="j_l1"    type="fixed"><parent>stake</parent><child>leaf_droop_1</child></joint>
+    <joint name="j_l2"    type="fixed"><parent>stake</parent><child>leaf_droop_2</child></joint>
+    <joint name="j_l3"    type="fixed"><parent>stake</parent><child>leaf_brown_1</child></joint>
+    <joint name="j_l4"    type="fixed"><parent>stake</parent><child>leaf_brown_2</child></joint>
+    <joint name="j_l5"    type="fixed"><parent>stake</parent><child>leaf_yellow_top</child></joint>
+    <joint name="j_fr"    type="fixed"><parent>pot</parent><child>dropped_fruit</child></joint>
+  </model>
+</sdf>

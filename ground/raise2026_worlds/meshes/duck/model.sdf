@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<!-- Author: Prof. Anis Koubaa <anis.koubaa@gmail.com> -->
+<sdf version="1.10">
+  <model name="duck">
+    <static>true</static>
+
+    <!-- Body (longer, more elongated than chicken — use sphere; differs by head/bill) -->
+    <link name="body">
+      <pose>0 0 0.20 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.16</radius></sphere></geometry>
+        <material><ambient>0.88 0.86 0.82 1</ambient><diffuse>0.97 0.95 0.92 1</diffuse><specular>0.05 0.05 0.05 1</specular></material>
+      </visual>
+      <collision name="c"><geometry><sphere><radius>0.16</radius></sphere></geometry></collision>
+    </link>
+
+    <!-- Tail tip (back, slightly up) -->
+    <link name="tail">
+      <pose>-0.16 0 0.24 0 -0.3 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.05</radius></sphere></geometry>
+        <material><ambient>0.88 0.86 0.82 1</ambient><diffuse>0.97 0.95 0.92 1</diffuse></material>
+      </visual>
+    </link>
+
+    <!-- Neck arched up + forward -->
+    <link name="neck">
+      <pose>0.13 0 0.30 0 -0.3 0</pose>
+      <visual name="v"><geometry><cylinder><radius>0.035</radius><length>0.16</length></cylinder></geometry>
+        <material><ambient>0.88 0.86 0.82 1</ambient><diffuse>0.97 0.95 0.92 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="head">
+      <pose>0.22 0 0.38 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.07</radius></sphere></geometry>
+        <material><ambient>0.88 0.86 0.82 1</ambient><diffuse>0.97 0.95 0.92 1</diffuse></material>
+      </visual>
+    </link>
+
+    <!-- Flat orange duck bill (wider + flatter than chicken's beak) -->
+    <link name="bill">
+      <pose>0.30 0 0.37 0 0 0</pose>
+      <visual name="v"><geometry><box><size>0.080 0.045 0.018</size></box></geometry>
+        <material><ambient>0.90 0.50 0.05 1</ambient><diffuse>1.0 0.65 0.10 1</diffuse></material>
+      </visual>
+    </link>
+
+    <!-- Eyes -->
+    <link name="eye_l">
+      <pose>0.245 0.050 0.40 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.008</radius></sphere></geometry>
+        <material><ambient>0.05 0.05 0.05 1</ambient><diffuse>0.05 0.05 0.05 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="eye_r">
+      <pose>0.245 -0.050 0.40 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.008</radius></sphere></geometry>
+        <material><ambient>0.05 0.05 0.05 1</ambient><diffuse>0.05 0.05 0.05 1</diffuse></material>
+      </visual>
+    </link>
+
+    <!-- Orange webbed feet (flatter than chicken legs) -->
+    <link name="foot_l">
+      <pose>0.04 0.06 0.025 0 0 0</pose>
+      <visual name="v"><geometry><box><size>0.08 0.05 0.015</size></box></geometry>
+        <material><ambient>0.90 0.50 0.05 1</ambient><diffuse>1.0 0.65 0.10 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="foot_r">
+      <pose>0.04 -0.06 0.025 0 0 0</pose>
+      <visual name="v"><geometry><box><size>0.08 0.05 0.015</size></box></geometry>
+        <material><ambient>0.90 0.50 0.05 1</ambient><diffuse>1.0 0.65 0.10 1</diffuse></material>
+      </visual>
+    </link>
+
+    <joint name="j_tail"  type="fixed"><parent>body</parent><child>tail</child></joint>
+    <joint name="j_neck"  type="fixed"><parent>body</parent><child>neck</child></joint>
+    <joint name="j_head"  type="fixed"><parent>body</parent><child>head</child></joint>
+    <joint name="j_bill"  type="fixed"><parent>body</parent><child>bill</child></joint>
+    <joint name="j_el"    type="fixed"><parent>body</parent><child>eye_l</child></joint>
+    <joint name="j_er"    type="fixed"><parent>body</parent><child>eye_r</child></joint>
+    <joint name="j_fl"    type="fixed"><parent>body</parent><child>foot_l</child></joint>
+    <joint name="j_fr"    type="fixed"><parent>body</parent><child>foot_r</child></joint>
+  </model>
+</sdf>

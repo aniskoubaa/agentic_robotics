@@ -1,0 +1,736 @@
+<!doctype html>
+<!-- Author: Prof. Anis Koubaa <anis.koubaa@gmail.com> -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>RAISE 2026 — Husky Teleop</title>
+  <style>
+    /* ── theme ──────────────────────────────────────────────────────── */
+    :root {
+      --bg:        #143f37;
+      --bg-2:      #0f2e29;
+      --fg:        #ffffff;
+      --muted:     rgba(255,255,255,0.65);
+      --accent:    #1e6f5c;
+      --accent-2:  #2a8a73;
+      --hot:       #d97706;
+      --stop:      #b91c1c;
+      --radius:    14px;
+      --shadow:    0 6px 18px rgba(0,0,0,0.30);
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; min-height: 100%; background: var(--bg); color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent; user-select: none;
+      overscroll-behavior: none;
+    }
+    body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+
+    .app {
+      display: grid;
+      gap: 0.8rem;
+      padding: 0.6rem 0.8rem 1.2rem;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .hdr { display: flex; align-items: baseline; justify-content: space-between; padding: 0 0.2rem; }
+    .hdr h1 { margin: 0; font-size: 1.05rem; letter-spacing: 0.06em; font-weight: 600; }
+    .hdr .meta { font-size: 0.72rem; color: var(--muted); }
+
+    /* ── camera ─────────────────────────────────────────────────────── */
+    .cam {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: #000;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      touch-action: none;        /* let our JS handle the touch instead of scrolling */
+      cursor: grab;
+    }
+    .cam:active { cursor: grabbing; }
+    .cam img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      pointer-events: none;       /* events go to the parent .cam */
+      -webkit-user-drag: none;
+    }
+    .cam .hud {
+      position: absolute; top: 0.5rem; left: 0.5rem;
+      display: flex; gap: 0.4rem; align-items: center;
+      background: rgba(0,0,0,0.45);
+      padding: 0.25rem 0.55rem;
+      border-radius: 0.45rem;
+      font-size: 0.72rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .cam .hud .dot { width: 8px; height: 8px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px #34d399; }
+    .cam .hint {
+      position: absolute; top: 0.5rem; right: 0.55rem;
+      background: rgba(0,0,0,0.45);
+      padding: 0.25rem 0.55rem;
+      border-radius: 0.45rem;
+      font-size: 0.7rem; opacity: 0.85;
+    }
+    /* "no signal" overlay shown when the active camera isn't streaming */
+    .cam .nosignal {
+      position: absolute; inset: 0;
+      display: none;                 /* toggled by JS */
+      align-items: center; justify-content: center; text-align: center;
+      flex-direction: column; gap: 0.4rem;
+      background: rgba(0,0,0,0.72); color: var(--fg);
+      font-size: 0.95rem; padding: 1rem;
+    }
+    .cam .nosignal .big { font-size: 2rem; }
+    .cam.dead .nosignal { display: flex; }
+
+    /* ── camera switch ──────────────────────────────────────────────── */
+    .camswitch { display: flex; gap: 0.5rem; }
+    .camswitch button {
+      flex: 1; padding: 0.55rem 0; border: 1px solid rgba(255,255,255,0.18);
+      border-radius: var(--radius); background: var(--bg-2); color: var(--fg);
+      font-size: 0.82rem; font-weight: 600; letter-spacing: 0.02em;
+      display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+      touch-action: manipulation; cursor: pointer;
+    }
+    .camswitch button .led { width: 8px; height: 8px; border-radius: 50%; background: #6b7280; }
+    .camswitch button.live  .led { background: #34d399; box-shadow: 0 0 6px #34d399; }   /* streaming */
+    .camswitch button.dead  .led { background: #b91c1c; }                                /* no signal */
+    .camswitch button.active { background: var(--accent); border-color: var(--accent-2); }
+    .camswitch button .tag { font-size: 0.62rem; color: var(--muted); }
+    .cam .center-btn {
+      position: absolute; bottom: 0.6rem; right: 0.6rem;
+      width: 2.4rem; height: 2.4rem; border-radius: 50%;
+      background: rgba(0,0,0,0.55); color: var(--fg);
+      border: 1px solid rgba(255,255,255,0.3);
+      font-size: 1.1rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; touch-action: manipulation;
+    }
+    .cam .center-btn:active { background: var(--hot); }
+    /* snapshot button — mirror of center-btn, bottom-left */
+    .cam .snap-btn {
+      position: absolute; bottom: 0.6rem; left: 0.6rem;
+      width: 2.4rem; height: 2.4rem; border-radius: 50%;
+      background: rgba(0,0,0,0.55); color: var(--fg);
+      border: 1px solid rgba(255,255,255,0.3);
+      font-size: 1.15rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; touch-action: manipulation;
+    }
+    .cam .snap-btn:active { background: var(--hot); }
+    /* transient "saved" toast */
+    .toast {
+      position: absolute; left: 50%; bottom: 0.6rem; transform: translateX(-50%);
+      background: rgba(0,0,0,0.78); color: var(--fg);
+      padding: 0.3rem 0.7rem; border-radius: 0.5rem; font-size: 0.72rem;
+      opacity: 0; transition: opacity 0.25s; pointer-events: none; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+
+    /* ── arm + gripper tool panel ───────────────────────────────────── */
+    .tools { background: var(--bg-2); border-radius: var(--radius);
+             padding: 0.7rem 0.9rem; box-shadow: var(--shadow); }
+    .tools h2 { margin: 0 0 0.45rem; font-size: 0.72rem; letter-spacing: 0.12em;
+                text-transform: uppercase; color: var(--muted); font-weight: 600; }
+    .btns { display: grid; gap: 0.5rem; grid-template-columns: repeat(4, 1fr); }
+    .btns.two { grid-template-columns: repeat(4, 1fr); }
+    .btns button {
+      padding: 0.6rem 0.2rem; border: none; border-radius: 0.6rem;
+      background: var(--accent); color: var(--fg); font-weight: 600; font-size: 0.74rem;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.25); touch-action: manipulation; cursor: pointer;
+    }
+    .btns button:active { background: var(--hot); transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.25); }
+    .tools .sub { margin: 0.55rem 0 0.3rem; font-size: 0.66rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+    /* crosshair */
+    .cam .xhair {
+      position: absolute; inset: 50% 50% auto auto;
+      transform: translate(50%, -50%);
+      width: 26px; height: 26px;
+      pointer-events: none; opacity: 0.5;
+    }
+    .cam .xhair::before, .cam .xhair::after {
+      content: ""; position: absolute; background: rgba(255,255,255,0.85);
+    }
+    .cam .xhair::before { left: 50%; top: 0; width: 1px; height: 100%; transform: translateX(-50%); }
+    .cam .xhair::after  { top:  50%; left: 0; height: 1px; width: 100%; transform: translateY(-50%); }
+
+    /* ── drive pad ──────────────────────────────────────────────────── */
+    .pad {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.55rem;
+    }
+    .pad button {
+      font-size: 2rem; line-height: 1; padding: 1.25rem 0;
+      border: none; border-radius: var(--radius);
+      background: var(--accent-2); color: var(--fg); font-weight: 700;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.25);
+      transition: transform 0.05s, background 0.1s;
+      touch-action: manipulation;
+    }
+    .pad button:active { background: var(--hot); transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.25); }
+    .pad .stop { background: var(--stop); font-size: 1.05rem; }
+    .pad .stop:active { background: #7f1d1d; }
+    .pad .empty { visibility: hidden; }
+
+    /* ── speed sliders ──────────────────────────────────────────────── */
+    .speed {
+      background: var(--bg-2);
+      border-radius: var(--radius);
+      padding: 0.7rem 0.9rem;
+      box-shadow: var(--shadow);
+    }
+    .speed h2 { margin: 0 0 0.45rem; font-size: 0.72rem; letter-spacing: 0.12em;
+                text-transform: uppercase; color: var(--muted); font-weight: 600; }
+    .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.15rem; font-size: 0.8rem; }
+    .row .val { font-weight: 700; min-width: 4rem; text-align: right; font-variant-numeric: tabular-nums; }
+    input[type=range] {
+      width: 100%; margin: 0 0 0.5rem; height: 2rem;
+      -webkit-appearance: none; background: transparent;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      height: 6px; background: rgba(255,255,255,0.22); border-radius: 3px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--hot); margin-top: -9px; cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+    input[type=range]::-moz-range-track { height: 6px; background: rgba(255,255,255,0.22); border-radius: 3px; }
+    input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; background: var(--hot); border: none; }
+
+    footer { text-align: center; color: var(--muted); font-size: 0.68rem; padding: 0.4rem 0 1rem; }
+
+    /* ── tabs (Drive / Gallery) ─────────────────────────────────────── */
+    .tabs { display: flex; gap: 0.35rem; }
+    .tabs button {
+      border: 1px solid rgba(255,255,255,0.18); background: var(--bg-2); color: var(--muted);
+      border-radius: 0.6rem; padding: 0.3rem 0.7rem; font-size: 0.74rem; font-weight: 600;
+      cursor: pointer; touch-action: manipulation;
+    }
+    .tabs button.active { background: var(--accent); color: var(--fg); border-color: var(--accent-2); }
+
+    /* ── gallery overlay ────────────────────────────────────────────── */
+    .gallery {
+      position: fixed; inset: 0; z-index: 50; display: none;
+      background: var(--bg); overflow-y: auto;
+      padding: env(safe-area-inset-top) 0.8rem 1.5rem;
+    }
+    .gallery.show { display: block; }
+    .gallery .gbar { display: flex; align-items: center; justify-content: space-between;
+                     padding: 0.7rem 0.2rem 0.6rem; position: sticky; top: 0; background: var(--bg); }
+    .gallery .gbar strong { font-size: 0.95rem; letter-spacing: 0.04em; }
+    .gallery .gbar button { background: var(--bg-2); color: var(--fg); border: 1px solid rgba(255,255,255,0.18);
+                            border-radius: 0.5rem; padding: 0.35rem 0.7rem; font-size: 0.8rem; cursor: pointer; }
+    .gallery .gbar #gal-back { background: var(--accent); border-color: var(--accent-2); font-weight: 600; }
+    .gallery .gbar #gal-back:active { background: var(--hot); }
+    /* responsive grid: ~2 cols on a phone, more as width grows */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(46%, 1fr)); gap: 0.6rem; }
+    @media (min-width: 480px) { .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
+    .grid .tile { position: relative; aspect-ratio: 4/3; border-radius: 0.7rem; overflow: hidden;
+                  background: #000; box-shadow: var(--shadow); cursor: pointer; }
+    .grid .tile img { width: 100%; height: 100%; object-fit: cover; display: block; background:#0a1a17; }
+    .grid .tile .del {
+      position: absolute; top: 0.4rem; right: 0.4rem;
+      width: 2.2rem; height: 2.2rem; border-radius: 50%;   /* big tap target */
+      background: rgba(0,0,0,0.62); color: #fff; border: none; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .grid .tile .del:active { background: var(--stop); }
+    .grid .tile .cap { position: absolute; bottom: 0; left: 0; right: 0;
+                       background: linear-gradient(transparent, rgba(0,0,0,0.7));
+                       font-size: 0.7rem; padding: 0.6rem 0.4rem 0.3rem; font-variant-numeric: tabular-nums;
+                       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gallery .empty { text-align: center; color: var(--muted); padding: 2.5rem 1rem; font-size: 0.9rem; line-height: 1.5; }
+
+    /* ── lightbox (full image + nav + delete) ───────────────────────── */
+    .lightbox { position: fixed; inset: 0; z-index: 60; display: none;
+                background: rgba(0,0,0,0.94); flex-direction: column; }
+    .lightbox.show { display: flex; }
+    .lightbox .lb-top { display: flex; align-items: center; justify-content: space-between;
+                        padding: env(safe-area-inset-top) 0.9rem 0.5rem; gap: 0.5rem; }
+    .lightbox .lb-top #lb-cap { font-size: 0.82rem; color: var(--fg); font-variant-numeric: tabular-nums; }
+    .lightbox .lb-top #lb-x { width: 2.4rem; height: 2.4rem; border-radius: 50%; flex: 0 0 auto;
+                              background: rgba(255,255,255,0.14); color:#fff; border:none; font-size:1.1rem; cursor:pointer; }
+    .lightbox .lb-stage { position: relative; flex: 1; min-height: 0;
+                          display: flex; align-items: center; justify-content: center; }
+    .lightbox .lb-stage img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .lightbox .lb-nav { position: absolute; top: 50%; transform: translateY(-50%);
+                        width: 3rem; height: 3rem; border-radius: 50%; border: none; cursor: pointer;
+                        background: rgba(255,255,255,0.16); color: #fff; font-size: 1.6rem; line-height: 1; }
+    .lightbox .lb-nav.prev { left: 0.5rem; }
+    .lightbox .lb-nav.next { right: 0.5rem; }
+    .lightbox .lb-nav:disabled { opacity: 0.25; }
+    .lightbox .lb-actions { display: flex; gap: 0.6rem; padding: 0.8rem 0.8rem calc(0.8rem + env(safe-area-inset-bottom)); justify-content: center; }
+    .lightbox .lb-actions button { padding: 0.75rem 1.6rem; border: none; border-radius: 0.6rem;
+                                   font-size: 0.92rem; font-weight: 600; color: #fff; cursor: pointer; }
+    .lightbox .lb-actions .del { background: var(--stop); }
+
+    /* ── landscape: side-by-side ────────────────────────────────────── */
+    @media (orientation: landscape) and (min-width: 720px) {
+      .app {
+        max-width: 1100px;
+        grid-template-columns: 1.4fr 1fr;
+        grid-template-areas:
+          "hdr hdr"
+          "sw  pad"
+          "cam pad"
+          "cam speed"
+          "cam tools"
+          "ftr ftr";
+      }
+      .hdr       { grid-area: hdr; }
+      .camswitch { grid-area: sw; }
+      .cam       { grid-area: cam; align-self: stretch; aspect-ratio: auto; height: 100%; }
+      .pad       { grid-area: pad; align-content: start; }
+      .speed     { grid-area: speed; }
+      .tools     { grid-area: tools; }
+      footer     { grid-area: ftr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <div class="hdr">
+      <h1>RAISE 2026 — Husky</h1>
+      <div class="tabs">
+        <button id="tab-drive" class="active">Drive</button>
+        <button id="tab-gallery">Gallery <span id="gal-count"></span></button>
+      </div>
+    </div>
+    <div class="meta" id="cam-meta" style="padding:0 0.2rem;font-size:0.72rem;color:var(--muted)">/ptz_camera</div>
+
+    <!-- camera switch -->
+    <div class="camswitch" id="camswitch">
+      <button data-cam="ptz">
+        <span class="led"></span>
+        <span>PTZ mast<span class="tag"> · pan/tilt</span></span>
+      </button>
+      <button data-cam="wrist">
+        <span class="led"></span>
+        <span>Wrist<span class="tag"> · on arm</span></span>
+      </button>
+    </div>
+
+    <!-- camera -->
+    <div class="cam" id="cam">
+      <img src="/stream" alt="camera" draggable="false">
+      <div class="xhair"></div>
+      <div class="hud">
+        <span class="dot"></span>
+        pan <span id="pan-val">0</span>°
+        · tilt <span id="tilt-val">17</span>°
+      </div>
+      <div class="hint" id="cam-hint">drag to aim</div>
+      <button class="snap-btn" id="snap" aria-label="capture snapshot">📸</button>
+      <button class="center-btn" id="ptz-center" aria-label="re-center camera">⊙</button>
+      <div class="toast" id="toast"></div>
+      <div class="nosignal" id="nosignal">
+        <span class="big">📷⃠</span>
+        <span id="nosignal-msg">camera not streaming</span>
+      </div>
+    </div>
+
+    <!-- drive pad -->
+    <div class="pad">
+      <button class="empty">·</button>
+      <button id="forward">↑</button>
+      <button class="empty">·</button>
+
+      <button id="left">←</button>
+      <button id="stop" class="stop">STOP</button>
+      <button id="right">→</button>
+
+      <button class="empty">·</button>
+      <button id="backward">↓</button>
+      <button class="empty">·</button>
+    </div>
+
+    <!-- speed sliders -->
+    <div class="speed">
+      <h2>Speed</h2>
+      <div class="row">
+        <label for="linear">Linear</label>
+        <span class="val"><span id="lin-val">{{ '%.2f' % linear }}</span> m/s</span>
+      </div>
+      <input type="range" id="linear" min="0.1" max="{{ max_linear }}" step="0.1" value="{{ linear }}">
+
+      <div class="row">
+        <label for="angular">Angular</label>
+        <span class="val"><span id="ang-val">{{ '%.2f' % angular }}</span> rad/s</span>
+      </div>
+      <input type="range" id="angular" min="0.1" max="{{ max_angular }}" step="0.1" value="{{ angular }}">
+    </div>
+
+    <!-- arm + gripper -->
+    <div class="tools">
+      <h2>Arm pose</h2>
+      <div class="btns">
+        <button data-pose="home">Home</button>
+        <button data-pose="above_plant">Above plant</button>
+        <button data-pose="side_view">Side view</button>
+        <button data-pose="stow">Stow</button>
+      </div>
+      <div class="sub">Gripper &amp; wrist</div>
+      <div class="btns two">
+        <button data-grip="open">Open</button>
+        <button data-grip="close">Close</button>
+        <button data-grip="rotate_ccw">Rotate ⟲</button>
+        <button data-grip="rotate_cw">Rotate ⟳</button>
+      </div>
+    </div>
+
+    <footer>RAISE 2026 — Flask + rclpy + cv_bridge</footer>
+  </div>
+
+  <!-- gallery overlay -->
+  <div class="gallery" id="gallery">
+    <div class="gbar">
+      <button id="gal-back">‹ Back</button>
+      <strong>Snapshots</strong>
+      <button id="gal-refresh">↻</button>
+    </div>
+    <div class="grid" id="gal-grid"></div>
+    <div class="empty" id="gal-empty">No snapshots yet — tap 📸 on the live view.</div>
+  </div>
+
+  <!-- lightbox -->
+  <div class="lightbox" id="lightbox">
+    <div class="lb-top">
+      <span id="lb-cap">—</span>
+      <button id="lb-x" aria-label="close">✕</button>
+    </div>
+    <div class="lb-stage" id="lb-stage">
+      <button class="lb-nav prev" id="lb-prev" aria-label="previous">‹</button>
+      <img id="lb-img" src="" alt="snapshot">
+      <button class="lb-nav next" id="lb-next" aria-label="next">›</button>
+    </div>
+    <div class="lb-actions">
+      <button class="del" id="lb-delete">🗑 Delete</button>
+    </div>
+  </div>
+
+<script>
+  // ── helpers ───────────────────────────────────────────────────────
+  const post = (url, body) => fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const send  = (dir)        => post('/cmd',   { direction: dir });
+  const speed = (k, v)       => post('/speed', { [k]: v });
+  const ptz   = (pan, tilt)  => post('/ptz',   { pan: pan, tilt: tilt });
+
+  // ── drive pad — hold-to-drive ─────────────────────────────────────
+  const bind = (id, dir) => {
+    const el = document.getElementById(id);
+    const start = (e) => { e.preventDefault(); send(dir); };
+    const stop  = (e) => { e.preventDefault(); send('stop'); };
+    el.addEventListener('touchstart', start, { passive: false });
+    el.addEventListener('mousedown',  start);
+    el.addEventListener('touchend',   stop);
+    el.addEventListener('mouseup',    stop);
+    el.addEventListener('mouseleave', stop);
+    el.addEventListener('touchcancel',stop);
+  };
+  bind('forward',  'forward');  bind('backward', 'backward');
+  bind('left',     'left');     bind('right',    'right');
+  document.getElementById('stop').addEventListener('click', () => send('stop'));
+
+  // ── speed sliders ─────────────────────────────────────────────────
+  const linSlider = document.getElementById('linear');
+  const angSlider = document.getElementById('angular');
+  const linVal = document.getElementById('lin-val');
+  const angVal = document.getElementById('ang-val');
+  linSlider.addEventListener('input', () => {
+    linVal.textContent = parseFloat(linSlider.value).toFixed(2);
+    speed('linear', parseFloat(linSlider.value));
+  });
+  angSlider.addEventListener('input', () => {
+    angVal.textContent = parseFloat(angSlider.value).toFixed(2);
+    speed('angular', parseFloat(angSlider.value));
+  });
+
+  // ── PTZ — drag on the camera ──────────────────────────────────────
+  // Cumulative model: each drag adds to the current pan/tilt.
+  //   right swipe → pan right    (positive pan)
+  //   left  swipe → pan left
+  //   down  swipe → tilt down    (positive tilt with axis 0 1 0)
+  //   up    swipe → tilt up
+  //
+  // Sensitivity: a full-width swipe ≈ 90° pan (π/2).
+  const PAN_PER_PX  =  (Math.PI / 2) / 320;   // calibrated for ~320 px-wide camera
+  const TILT_PER_PX =  (Math.PI / 3) / 280;
+  const PUBLISH_HZ  = 15;                      // throttle network rate
+  const PAN_LIMIT   = Math.PI;
+  const TILT_MIN    = -Math.PI / 2;
+  const TILT_MAX    =  Math.PI / 4;
+
+  let pan  = {{ pan }};
+  let tilt = {{ tilt }};
+  let dragging = false;
+  let lastX = 0, lastY = 0;
+  let lastPublish = 0;
+  let pendingPublish = null;
+
+  const panElem  = document.getElementById('pan-val');
+  const tiltElem = document.getElementById('tilt-val');
+  const refresh = () => {
+    panElem.textContent  = (pan  * 180 / Math.PI).toFixed(0);
+    tiltElem.textContent = (tilt * 180 / Math.PI).toFixed(0);
+  };
+  refresh();
+
+  const publishNow = () => {
+    pendingPublish = null;
+    lastPublish = Date.now();
+    ptz(pan, tilt);
+  };
+  const publishThrottled = () => {
+    const now = Date.now();
+    const interval = 1000 / PUBLISH_HZ;
+    const wait = lastPublish + interval - now;
+    if (wait <= 0) {
+      publishNow();
+    } else if (pendingPublish === null) {
+      pendingPublish = setTimeout(publishNow, wait);
+    }
+  };
+
+  const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+
+  const cam = document.getElementById('cam');
+  const getXY = (e) => {
+    if (e.touches && e.touches[0]) return [e.touches[0].clientX, e.touches[0].clientY];
+    return [e.clientX, e.clientY];
+  };
+
+  const onDown = (e) => {
+    if (e.target.closest('.center-btn') || e.target.closest('.snap-btn')) return;  // those buttons handle themselves
+    if (activeCam !== 'ptz') return;               // wrist cam has no pan/tilt
+    e.preventDefault();
+    dragging = true;
+    [lastX, lastY] = getXY(e);
+  };
+  const onMove = (e) => {
+    if (!dragging) return;
+    e.preventDefault();
+    const [x, y] = getXY(e);
+    const dx = x - lastX;
+    const dy = y - lastY;
+    lastX = x; lastY = y;
+    pan  = clamp(pan  + dx * PAN_PER_PX,  -PAN_LIMIT, PAN_LIMIT);
+    tilt = clamp(tilt + dy * TILT_PER_PX, TILT_MIN,  TILT_MAX);
+    refresh();
+    publishThrottled();
+  };
+  const onUp = (e) => {
+    if (dragging) { e.preventDefault(); dragging = false; publishNow(); }
+  };
+
+  cam.addEventListener('touchstart', onDown, { passive: false });
+  cam.addEventListener('touchmove',  onMove, { passive: false });
+  cam.addEventListener('touchend',   onUp);
+  cam.addEventListener('touchcancel',onUp);
+  cam.addEventListener('mousedown',  onDown);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup',   onUp);
+
+  // re-center
+  document.getElementById('ptz-center').addEventListener('click', (e) => {
+    e.stopPropagation();
+    pan = 0; tilt = 0;
+    refresh();
+    publishNow();
+  });
+
+  // ── camera switching + "is it streaming?" status ──────────────────
+  let activeCam = "{{ active_camera }}";
+  const TOPIC = { ptz: '/ptz_camera', wrist: '/wrist_camera' };
+  const camMeta   = document.getElementById('cam-meta');
+  const camHint   = document.getElementById('cam-hint');
+  const camBox    = document.getElementById('cam');
+  const nosignal  = document.getElementById('nosignal');
+  const nosigMsg  = document.getElementById('nosignal-msg');
+  const switchBtns = Array.from(document.querySelectorAll('.camswitch button'));
+
+  // Apply the latest /cameras status to the UI: button LEDs (live/dead),
+  // active highlight, the no-signal overlay, header label, and the aim hint.
+  const applyStatus = (status) => {
+    if (status.active) activeCam = status.active;
+    const cams = status.cameras || {};
+    switchBtns.forEach(btn => {
+      const name = btn.dataset.cam;
+      const live = !!(cams[name] && cams[name].streaming);
+      btn.classList.toggle('live',   live);
+      btn.classList.toggle('dead',   !live);
+      btn.classList.toggle('active', name === activeCam);
+    });
+    const activeLive = !!(cams[activeCam] && cams[activeCam].streaming);
+    camBox.classList.toggle('dead', !activeLive);   // shows the overlay
+    nosigMsg.textContent = TOPIC[activeCam] + ' is not streaming';
+    camMeta.textContent  = TOPIC[activeCam] + (activeLive ? '' : ' — no signal');
+    camHint.style.display = (activeCam === 'ptz') ? '' : 'none';   // drag only aims PTZ
+  };
+
+  const refreshCameras = () =>
+    fetch('/cameras').then(r => r.json()).then(applyStatus).catch(() => {});
+
+  switchBtns.forEach(btn => btn.addEventListener('click', () => {
+    const name = btn.dataset.cam;
+    activeCam = name;                 // optimistic; status poll confirms
+    fetch('/camera', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ camera: name }),
+    }).then(r => r.json()).then(applyStatus).catch(() => {});
+  }));
+
+  refreshCameras();
+  setInterval(refreshCameras, 1500);   // keep the live/dead LEDs current
+
+  // ── arm + gripper + snapshot ──────────────────────────────────────
+  const toast = document.getElementById('toast');
+  let toastTimer = null;
+  const showToast = (msg) => {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+  };
+
+  // Arm pose buttons → POST /arm {pose}
+  document.querySelectorAll('[data-pose]').forEach(btn =>
+    btn.addEventListener('click', () => {
+      const pose = btn.dataset.pose;
+      post('/arm', { pose }).then(r => r.json())
+        .then(d => showToast(d.ok ? `arm → ${pose}` : `arm: ${pose}?`))
+        .catch(() => {});
+    }));
+
+  // Gripper / wrist buttons → POST /gripper {action}
+  document.querySelectorAll('[data-grip]').forEach(btn =>
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.grip;
+      post('/gripper', { action }).then(r => r.json())
+        .then(d => showToast(d.ok ? action.replace('_', ' ') : `?${action}`))
+        .catch(() => {});
+    }));
+
+  // Snapshot → POST /snapshot, show where it saved, refresh gallery count
+  document.getElementById('snap').addEventListener('click', (e) => {
+    e.stopPropagation();
+    post('/snapshot', {}).then(r => r.json())
+      .then(d => { showToast(d.ok ? `saved ${d.path.split('/').pop()}` : 'no frame to save');
+                   if (d.ok) loadGallery(); })
+      .catch(() => {});
+  });
+
+  // ── gallery (tab) ─────────────────────────────────────────────────
+  const gallery   = document.getElementById('gallery');
+  const galGrid   = document.getElementById('gal-grid');
+  const galEmpty  = document.getElementById('gal-empty');
+  const galCount  = document.getElementById('gal-count');
+  const tabDrive  = document.getElementById('tab-drive');
+  const tabGallery= document.getElementById('tab-gallery');
+  const lightbox  = document.getElementById('lightbox');
+  const lbImg     = document.getElementById('lb-img');
+  const lbCap     = document.getElementById('lb-cap');
+  const lbPrev    = document.getElementById('lb-prev');
+  const lbNext    = document.getElementById('lb-next');
+
+  let photos = [];      // current list of filenames (newest first)
+  let lbIndex = -1;     // index into photos shown in the lightbox, or -1
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  // ptz_20260528_204442.jpg  →  "PTZ · 28 May 20:44"
+  const prettyName = (name) => {
+    const m = name.match(/^([a-z]+)_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})/i);
+    if (!m) return name;
+    const [, cam, , mo, d, h, mi] = m;
+    return `${cam.toUpperCase()} · ${parseInt(d,10)} ${MONTHS[parseInt(mo,10)-1]} ${h}:${mi}`;
+  };
+
+  const loadGallery = () =>
+    fetch('/gallery').then(r => r.json()).then(d => {
+      photos = d.photos || [];
+      galCount.textContent = photos.length ? `(${photos.length})` : '';
+      galEmpty.style.display = photos.length ? 'none' : '';
+      galGrid.innerHTML = '';
+      photos.forEach((name, i) => {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        tile.innerHTML =
+          `<img loading="lazy" src="/photo/${encodeURIComponent(name)}" alt="${name}">` +
+          `<button class="del" aria-label="delete">🗑</button>` +
+          `<div class="cap">${prettyName(name)}</div>`;
+        tile.querySelector('img').addEventListener('click', () => openLightbox(i));
+        tile.querySelector('.del').addEventListener('click', (ev) => {
+          ev.stopPropagation(); deletePhoto(name);
+        });
+        galGrid.appendChild(tile);
+      });
+    }).catch(() => {});
+
+  const openLightbox = (index) => {
+    if (index < 0 || index >= photos.length) return;
+    lbIndex = index;
+    const name = photos[index];
+    lbImg.src = `/photo/${encodeURIComponent(name)}`;
+    lbCap.textContent = `${prettyName(name)}   (${index + 1}/${photos.length})`;
+    lbPrev.disabled = (index === 0);
+    lbNext.disabled = (index === photos.length - 1);
+    lightbox.classList.add('show');
+  };
+  const closeLightbox = () => { lightbox.classList.remove('show'); lbIndex = -1; };
+  const step = (delta) => openLightbox(lbIndex + delta);
+
+  const deletePhoto = (name) => {
+    if (!confirm('Delete this photo?')) return;
+    post('/photo_delete', { name }).then(r => r.json()).then(d => {
+      if (!d.ok) return;
+      const wasOpen = lightbox.classList.contains('show');
+      const idx = photos.indexOf(name);
+      loadGallery().then(() => {
+        // if we deleted from the lightbox, show the next photo (or close)
+        if (wasOpen && photos.length) openLightbox(Math.min(idx, photos.length - 1));
+        else closeLightbox();
+      });
+    }).catch(() => {});
+  };
+
+  const showTab = (which) => {
+    const isGallery = (which === 'gallery');
+    gallery.classList.toggle('show', isGallery);
+    tabGallery.classList.toggle('active', isGallery);
+    tabDrive.classList.toggle('active', !isGallery);
+    if (isGallery) loadGallery();
+    else closeLightbox();
+  };
+
+  document.getElementById('lb-delete').addEventListener('click', () => {
+    if (lbIndex >= 0) deletePhoto(photos[lbIndex]);
+  });
+  document.getElementById('lb-x').addEventListener('click', closeLightbox);
+  lbPrev.addEventListener('click', () => step(-1));
+  lbNext.addEventListener('click', () => step(1));
+  // tap the dark backdrop (not the image or a button) to close
+  document.getElementById('lb-stage').addEventListener('click', (e) => {
+    if (e.target.id === 'lb-stage') closeLightbox();
+  });
+  document.getElementById('gal-refresh').addEventListener('click', loadGallery);
+  document.getElementById('gal-back').addEventListener('click', () => showTab('drive'));
+  tabDrive.addEventListener('click', () => showTab('drive'));
+  tabGallery.addEventListener('click', () => showTab('gallery'));
+
+  loadGallery();   // populate the count badge on load
+</script>
+</body>
+</html>

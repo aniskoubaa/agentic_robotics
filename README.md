@@ -33,19 +33,66 @@ ros2 run agr_uav_labs 01_check_bridge
 
 ---
 
-## Packages
+## Repository layout
 
-| Package | Purpose |
-|---|---|
-| `agr_core` | Interfaces shared by every platform — `MissionPlan`, `Waypoint`, `Violation`, `MissionConstraints`, `VerificationResult`, `VerifyMission.srv` |
-| `agr_uav_description` | Airframe registry (`airframes.yaml`) + typed lookup |
-| `agr_uav_bringup` | `single.launch.py`, `multi.launch.py` |
-| `agr_uav_tools` | `px4_topics` resolver, `vehicle_monitor`, `list_airframes` |
-| `agr_uav_worlds` | Gazebo worlds |
-| `agr_uav_labs` | Numbered student exercises |
+Platforms live in separate subtrees and share exactly one package. Nothing in
+`uav/` loads anything from `ground/`, or the reverse — that isolation is the
+structure's whole job, so a new platform is a new folder rather than an edit
+everywhere.
 
-Adding a platform means adding `agr_ground_*` / `agr_legged_*` alongside;
-`agr_core` is already platform-neutral.
+```
+agentic_robotics/
+├── agr-sim  agr-stop  agr-build      # the only commands you type
+├── agr_aliases.sh  setup.sh
+├── common/
+│   └── agr_core/                     # interfaces shared by ALL platforms
+├── uav/
+│   ├── agr_uav_bringup/              # single- and multi-vehicle launch
+│   ├── agr_uav_description/          # airframe registry + capabilities
+│   ├── agr_uav_tools/                # PX4 topic resolver, vehicle_monitor
+│   ├── agr_uav_worlds/               # agr_city, agr_defense
+│   └── agr_uav_labs/                 # numbered exercises
+└── ground/                           # RAISE 2026 stack, unmodified
+    ├── raise2026_bringup/            # Husky + greenhouse launch
+    ├── raise2026_worlds/             # greenhouse_2026(_lite)
+    ├── raise2026_description/        # Husky + UR arm + Robotiq gripper
+    ├── raise2026_tools/              # gripper / nav / detector / inspector servers
+    ├── raise2026_teleop/             # keyboard, phone, joystick
+    ├── raise2026_labs/               # Day 1-3 exercises
+    └── raise2026_demos/
+```
+
+`legged/` slots in the same way when you add it; `common/agr_core` is already
+platform-neutral.
+
+**Ground packages keep their `raise2026_*` names on purpose** — see
+`ground/README.md`. Renaming would touch ~140 files including VLA labs that
+need a GPU and checkpoints to verify, and an unverifiable rename is how a
+working course quietly breaks.
+
+---
+
+## Commands
+
+```bash
+# UAV
+agr-sim                                  # x500, empty world, GUI
+agr-sim world:=agr_city                  # urban
+agr-sim world:=agr_defense               # secured installation
+agr-sim airframe:=rc_cessna              # fixed-wing
+agr-sim uav --multi count:=3             # three vehicles
+
+# Ground (RAISE)
+agr-sim ground                           # Husky in the greenhouse
+agr-sim ground world:=greenhouse_2026_lite.sdf
+agr-sim ground --world-only
+
+agr-stop                                 # stops whichever is running
+agr-build                                # colcon, with the right python
+agr_help                                 # everything
+```
+
+---
 
 ---
 

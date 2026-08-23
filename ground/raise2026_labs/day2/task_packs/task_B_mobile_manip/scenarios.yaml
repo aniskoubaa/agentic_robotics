@@ -1,0 +1,29 @@
+# Author: Prof. Anis Koubaa <anis.koubaa@gmail.com>
+# RAISE 2026 — Task B grading scenarios: 5 instructions x 3 start placements.
+# Each start fixes the Husky's spawn (distance + heading offset to the plant).
+# Success requires BOTH a good approach and a good pick (see pack.yaml).
+
+scenarios:
+  - id: B1
+    instruction: "go to the plant and pick a tomato"
+    starts: [front_near, front_far, angled_left]
+  - id: B2
+    instruction: "drive to the tomato plant and harvest one"
+    starts: [front_far, angled_right, front_near]
+  - id: B3
+    instruction: "approach the plant and pick the tomato"
+    starts: [angled_left, angled_right, front_far]
+  - id: B4
+    instruction: "go pick a tomato from the plant"
+    starts: [front_near, angled_left, front_far]
+  - id: B5
+    instruction: "approach the plant and pick the tomato"
+    starts: [angled_right, front_near, front_far]
+
+# Husky spawn placements relative to the plant: [distance_m, heading_offset_rad].
+# heading_offset = angle the Husky must correct to face the plant.
+starts:
+  front_near:   [1.4, 0.0]
+  front_far:    [2.2, 0.0]
+  angled_left:  [1.8, 0.35]
+  angled_right: [1.8, -0.35]

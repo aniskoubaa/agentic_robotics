@@ -1,0 +1,30 @@
+# Author: Prof. Anis Koubaa <anis.koubaa@gmail.com>
+# RAISE 2026 — Task A grading scenarios: 5 instructions x 3 start poses.
+# The Lab 2.2 evaluator runs each (instruction, pose) once and scores success.
+
+scenarios:
+  - id: A1
+    instruction: "pick the tomato"
+    poses: [center, left, right]
+  - id: A2
+    instruction: "pick up the tomato and place it in the bin"
+    poses: [center, near, far]
+  - id: A3
+    instruction: "grab the tomato and drop it in the basket"
+    poses: [center, left, far]
+  - id: A4
+    instruction: "pick up the tomato"
+    poses: [right, near, far]
+  - id: A5
+    instruction: "pick the tomato"
+    poses: [left, right, near]
+
+# Named tomato start positions on the table (sim spawn offsets, metres, relative
+# to the table centre in the arm's base frame). The evaluator places the tomato
+# here before each rollout.
+pose_offsets:
+  center: [0.00, 0.00]
+  left:   [-0.12, 0.00]
+  right:  [0.12, 0.00]
+  near:   [0.00, -0.10]
+  far:    [0.00, 0.12]

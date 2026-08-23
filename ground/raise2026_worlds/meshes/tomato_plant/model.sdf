@@ -1,0 +1,192 @@
+<?xml version="1.0"?>
+<!-- Author: Prof. Anis Koubaa <anis.koubaa@gmail.com> -->
+<!--
+  Vine-style tomato plant.
+
+  Wooden stake → vine + leaves clustered at multiple heights → 3 fruit
+  clusters (ripe/turning/unripe) + yellow flowers near the top.
+  Still SDF primitives, but the shape now reads as a real cultivated
+  tomato vine instead of "lollipop on a stem".
+-->
+<sdf version="1.10">
+  <model name="tomato_plant">
+    <static>true</static>
+
+    <!-- ── Clay/plastic pot ────────────────────────────────────────── -->
+    <link name="pot">
+      <pose>0 0 0.075 0 0 0</pose>
+      <visual name="v"><geometry><cylinder><radius>0.13</radius><length>0.15</length></cylinder></geometry>
+        <material>
+          <ambient>0.30 0.20 0.13 1</ambient>
+          <diffuse>0.45 0.28 0.18 1</diffuse>
+          <specular>0.10 0.05 0.03 1</specular>
+        </material>
+      </visual>
+      <collision name="c"><geometry><cylinder><radius>0.13</radius><length>0.15</length></cylinder></geometry></collision>
+    </link>
+
+    <!-- Soil top in the pot -->
+    <link name="pot_soil">
+      <pose>0 0 0.148 0 0 0</pose>
+      <visual name="v"><geometry><cylinder><radius>0.115</radius><length>0.01</length></cylinder></geometry>
+        <material>
+          <ambient>0.18 0.13 0.08 1</ambient>
+          <diffuse>0.25 0.18 0.12 1</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <!-- ── Wooden support stake (the cane real tomato vines climb) ── -->
+    <link name="stake">
+      <pose>0 0 0.85 0 0 0</pose>
+      <visual name="v"><geometry><cylinder><radius>0.012</radius><length>1.4</length></cylinder></geometry>
+        <material>
+          <ambient>0.35 0.25 0.15 1</ambient>
+          <diffuse>0.55 0.40 0.25 1</diffuse>
+        </material>
+      </visual>
+      <collision name="c"><geometry><cylinder><radius>0.012</radius><length>1.4</length></cylinder></geometry></collision>
+    </link>
+
+    <!-- ── Vine stem segments (slightly offset to suggest climbing) ── -->
+    <link name="stem_lower">
+      <pose>0.015 0 0.40 0 0 0</pose>
+      <visual name="v"><geometry><cylinder><radius>0.018</radius><length>0.50</length></cylinder></geometry>
+        <material><ambient>0.14 0.35 0.10 1</ambient><diffuse>0.20 0.55 0.15 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="stem_mid">
+      <pose>-0.015 0.010 0.85 0 0 0</pose>
+      <visual name="v"><geometry><cylinder><radius>0.016</radius><length>0.40</length></cylinder></geometry>
+        <material><ambient>0.14 0.35 0.10 1</ambient><diffuse>0.20 0.55 0.15 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="stem_top">
+      <pose>0.012 -0.010 1.20 0 0 0</pose>
+      <visual name="v"><geometry><cylinder><radius>0.013</radius><length>0.30</length></cylinder></geometry>
+        <material><ambient>0.16 0.40 0.12 1</ambient><diffuse>0.22 0.60 0.16 1</diffuse></material>
+      </visual>
+    </link>
+
+    <!-- ── Leaf clusters at 4 heights (flattened spheres = ellipsoids) ─ -->
+    <link name="leaves_low_l">
+      <pose>-0.16 0.06 0.32 0 0.6 0.4</pose>
+      <visual name="v"><geometry><sphere><radius>0.12</radius></sphere></geometry>
+        <material><ambient>0.12 0.35 0.10 1</ambient><diffuse>0.18 0.55 0.15 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="leaves_low_r">
+      <pose>0.18 -0.05 0.36 0 -0.5 -0.3</pose>
+      <visual name="v"><geometry><sphere><radius>0.13</radius></sphere></geometry>
+        <material><ambient>0.13 0.36 0.10 1</ambient><diffuse>0.19 0.56 0.15 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="leaves_mid_l">
+      <pose>-0.14 -0.10 0.70 0 0.5 -0.4</pose>
+      <visual name="v"><geometry><sphere><radius>0.14</radius></sphere></geometry>
+        <material><ambient>0.13 0.38 0.10 1</ambient><diffuse>0.20 0.58 0.15 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="leaves_mid_r">
+      <pose>0.15 0.08 0.75 0 -0.5 0.5</pose>
+      <visual name="v"><geometry><sphere><radius>0.13</radius></sphere></geometry>
+        <material><ambient>0.13 0.38 0.10 1</ambient><diffuse>0.20 0.58 0.15 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="leaves_high">
+      <pose>0.00 0.00 1.18 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.16</radius></sphere></geometry>
+        <material><ambient>0.14 0.40 0.11 1</ambient><diffuse>0.22 0.60 0.16 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="leaves_top">
+      <pose>0.00 0.00 1.42 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.10</radius></sphere></geometry>
+        <material><ambient>0.16 0.45 0.13 1</ambient><diffuse>0.25 0.65 0.18 1</diffuse></material>
+      </visual>
+    </link>
+
+    <!-- ── Fruit cluster 1: lower (ripe red) ───────────────────────── -->
+    <link name="fruit_r1a"><pose> 0.09 0.02 0.50 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.040</radius></sphere></geometry>
+        <material><ambient>0.75 0.10 0.05 1</ambient><diffuse>0.95 0.18 0.08 1</diffuse><specular>0.5 0.1 0.1 1</specular></material>
+      </visual>
+      <collision name="c"><geometry><sphere><radius>0.040</radius></sphere></geometry></collision>
+    </link>
+    <link name="fruit_r1b"><pose> 0.14 -0.01 0.48 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.038</radius></sphere></geometry>
+        <material><ambient>0.78 0.10 0.05 1</ambient><diffuse>0.97 0.18 0.08 1</diffuse><specular>0.5 0.1 0.1 1</specular></material>
+      </visual>
+      <collision name="c"><geometry><sphere><radius>0.038</radius></sphere></geometry></collision>
+    </link>
+    <link name="fruit_r1c"><pose> 0.10 0.07 0.46 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.036</radius></sphere></geometry>
+        <material><ambient>0.72 0.12 0.05 1</ambient><diffuse>0.92 0.20 0.08 1</diffuse><specular>0.5 0.1 0.1 1</specular></material>
+      </visual>
+      <collision name="c"><geometry><sphere><radius>0.036</radius></sphere></geometry></collision>
+    </link>
+
+    <!-- ── Fruit cluster 2: middle (turning — orange) ──────────────── -->
+    <link name="fruit_t1"><pose>-0.10 -0.05 0.86 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.040</radius></sphere></geometry>
+        <material><ambient>0.78 0.40 0.08 1</ambient><diffuse>0.95 0.55 0.12 1</diffuse><specular>0.4 0.2 0.1 1</specular></material>
+      </visual>
+      <collision name="c"><geometry><sphere><radius>0.040</radius></sphere></geometry></collision>
+    </link>
+    <link name="fruit_t2"><pose>-0.12 0.02 0.82 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.038</radius></sphere></geometry>
+        <material><ambient>0.75 0.38 0.08 1</ambient><diffuse>0.92 0.52 0.12 1</diffuse><specular>0.4 0.2 0.1 1</specular></material>
+      </visual>
+      <collision name="c"><geometry><sphere><radius>0.038</radius></sphere></geometry></collision>
+    </link>
+
+    <!-- ── Fruit cluster 3: upper (unripe — green-yellow) ──────────── -->
+    <link name="fruit_u1"><pose> 0.09 -0.05 1.12 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.035</radius></sphere></geometry>
+        <material><ambient>0.55 0.62 0.12 1</ambient><diffuse>0.72 0.78 0.20 1</diffuse><specular>0.2 0.2 0.1 1</specular></material>
+      </visual>
+      <collision name="c"><geometry><sphere><radius>0.035</radius></sphere></geometry></collision>
+    </link>
+    <link name="fruit_u2"><pose> 0.06 0.07 1.08 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.032</radius></sphere></geometry>
+        <material><ambient>0.50 0.60 0.10 1</ambient><diffuse>0.68 0.76 0.18 1</diffuse><specular>0.2 0.2 0.1 1</specular></material>
+      </visual>
+      <collision name="c"><geometry><sphere><radius>0.032</radius></sphere></geometry></collision>
+    </link>
+
+    <!-- ── Yellow flowers (very top) — visual cue that the plant is still growing ─ -->
+    <link name="flower_1"><pose>-0.06 0.04 1.36 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.012</radius></sphere></geometry>
+        <material><ambient>0.92 0.78 0.15 1</ambient><diffuse>1.0 0.88 0.20 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="flower_2"><pose>0.05 -0.05 1.40 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.012</radius></sphere></geometry>
+        <material><ambient>0.92 0.78 0.15 1</ambient><diffuse>1.0 0.88 0.20 1</diffuse></material>
+      </visual>
+    </link>
+
+    <!-- ── Joints anchoring everything to the pot ──────────────────── -->
+    <joint name="j_stake"   type="fixed"><parent>pot</parent><child>stake</child></joint>
+    <joint name="j_soil"    type="fixed"><parent>pot</parent><child>pot_soil</child></joint>
+    <joint name="j_stem_l"  type="fixed"><parent>stake</parent><child>stem_lower</child></joint>
+    <joint name="j_stem_m"  type="fixed"><parent>stake</parent><child>stem_mid</child></joint>
+    <joint name="j_stem_t"  type="fixed"><parent>stake</parent><child>stem_top</child></joint>
+    <joint name="j_ll_l"    type="fixed"><parent>stake</parent><child>leaves_low_l</child></joint>
+    <joint name="j_ll_r"    type="fixed"><parent>stake</parent><child>leaves_low_r</child></joint>
+    <joint name="j_lm_l"    type="fixed"><parent>stake</parent><child>leaves_mid_l</child></joint>
+    <joint name="j_lm_r"    type="fixed"><parent>stake</parent><child>leaves_mid_r</child></joint>
+    <joint name="j_lh"      type="fixed"><parent>stake</parent><child>leaves_high</child></joint>
+    <joint name="j_lt"      type="fixed"><parent>stake</parent><child>leaves_top</child></joint>
+    <joint name="j_r1a"     type="fixed"><parent>stake</parent><child>fruit_r1a</child></joint>
+    <joint name="j_r1b"     type="fixed"><parent>stake</parent><child>fruit_r1b</child></joint>
+    <joint name="j_r1c"     type="fixed"><parent>stake</parent><child>fruit_r1c</child></joint>
+    <joint name="j_t1"      type="fixed"><parent>stake</parent><child>fruit_t1</child></joint>
+    <joint name="j_t2"      type="fixed"><parent>stake</parent><child>fruit_t2</child></joint>
+    <joint name="j_u1"      type="fixed"><parent>stake</parent><child>fruit_u1</child></joint>
+    <joint name="j_u2"      type="fixed"><parent>stake</parent><child>fruit_u2</child></joint>
+    <joint name="j_f1"      type="fixed"><parent>stake</parent><child>flower_1</child></joint>
+    <joint name="j_f2"      type="fixed"><parent>stake</parent><child>flower_2</child></joint>
+
+  </model>
+</sdf>

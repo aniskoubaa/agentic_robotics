@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<!-- Author: Prof. Anis Koubaa <anis.koubaa@gmail.com> -->
+<!--
+  RAISE 2026 — full robot composition.
+
+  Husky A200 base + arm mount + UR5e + Robotiq 2F-85 + RealSense D435 (wrist).
+
+  Note on package names (ROS 2 Jazzy as of 2026):
+    - Clearpath restructured: `husky_description` no longer exists; the A200 URDF
+      lives in `clearpath_platform_description` and provides an `<xacro:a200/>` macro.
+    - Root link from a200 is `base_link`; `top_chassis_link` is the attach point
+      on top of the chassis.
+-->
+<robot name="raise2026_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ── Husky A200 base ──────────────────────────────────────────────── -->
+  <xacro:include filename="$(find clearpath_platform_description)/urdf/a200/a200.urdf.xacro"/>
+  <xacro:a200/>
+
+  <!-- ── Mount plate on top of the Husky chassis ──────────────────────── -->
+  <xacro:include filename="$(find raise2026_description)/urdf/husky_arm_mount.urdf.xacro"/>
+  <xacro:husky_arm_mount parent="top_chassis_link">
+    <origin xyz="0 0 0.05" rpy="0 0 0"/>
+  </xacro:husky_arm_mount>
+
+  <!-- ── UR5e arm ─────────────────────────────────────────────────────── -->
+  <xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
+  <xacro:ur_robot
+      name="ur5e"
+      tf_prefix="ur5e_"
+      parent="arm_mount_plate"
+      joint_limits_parameters_file="$(find ur_description)/config/ur5e/joint_limits.yaml"
+      kinematics_parameters_file="$(find ur_description)/config/ur5e/default_kinematics.yaml"
+      physical_parameters_file="$(find ur_description)/config/ur5e/physical_parameters.yaml"
+      visual_parameters_file="$(find ur_description)/config/ur5e/visual_parameters.yaml">
+    <origin xyz="0 0 0.02" rpy="0 0 0"/>
+  </xacro:ur_robot>
+
+  <!-- ── UR-to-Robotiq mechanical adapter ─────────────────────────────── -->
+  <xacro:include filename="$(find robotiq_description)/urdf/ur_to_robotiq_adapter.urdf.xacro"/>
+  <xacro:ur_to_robotiq prefix="" connected_to="ur5e_tool0"/>
+
+  <!-- ── Robotiq 2F-85 gripper (no ros2_control yet) ──────────────────── -->
+  <xacro:include filename="$(find robotiq_description)/urdf/robotiq_2f_85_macro.urdf.xacro"/>
+  <xacro:robotiq_gripper
+      name="gripper"
+      prefix="gripper_"
+      parent="gripper_mount_link"
+      sim_ignition="true"
+      include_ros2_control="false">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </xacro:robotiq_gripper>
+
+  <!-- ── RealSense D435 wrist camera (above the gripper) ──────────────── -->
+  <xacro:include filename="$(find realsense2_description)/urdf/_d435.urdf.xacro"/>
+  <xacro:sensor_d435
+      name="wrist_camera"
+      parent="ur5e_tool0"
+      use_nominal_extrinsics="true">
+    <origin xyz="0.07 0 0" rpy="0 -1.5708 0"/>
+  </xacro:sensor_d435>
+
+  <!-- ── Gazebo sensor + plugin overlay ───────────────────────────────── -->
+  <!-- See raise2026_gazebo.urdf.xacro for the camera, lidar, and joint   -->
+  <!-- state publisher Gazebo blocks.                                     -->
+  <xacro:include filename="$(find raise2026_description)/urdf/raise2026_gazebo.urdf.xacro"/>
+
+</robot>

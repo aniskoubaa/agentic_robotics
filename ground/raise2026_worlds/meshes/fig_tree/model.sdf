@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+<!-- Author: Prof. Anis Koubaa <anis.koubaa@gmail.com> -->
+<sdf version="1.10">
+  <model name="fig_tree">
+    <static>true</static>
+
+    <!-- Lower trunk — thick, slightly knobby look (two cylinder segments) -->
+    <link name="trunk_lower">
+      <pose>0 0 0.40 0 0 0</pose>
+      <visual name="v"><geometry><cylinder><radius>0.22</radius><length>0.80</length></cylinder></geometry>
+        <material>
+          <ambient>0.30 0.24 0.18 1</ambient>
+          <diffuse>0.45 0.36 0.26 1</diffuse>
+        </material>
+      </visual>
+      <collision name="c"><geometry><cylinder><radius>0.22</radius><length>0.80</length></cylinder></geometry></collision>
+    </link>
+    <link name="trunk_upper">
+      <pose>0.05 0 1.15 0 0.10 0</pose>           <!-- slight tilt for character -->
+      <visual name="v"><geometry><cylinder><radius>0.18</radius><length>0.70</length></cylinder></geometry>
+        <material>
+          <ambient>0.32 0.26 0.19 1</ambient>
+          <diffuse>0.48 0.38 0.28 1</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <!-- Broad, low canopy — characteristic of figs (3 overlapping spheres) -->
+    <link name="canopy_main">
+      <pose>0 0 2.05 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>1.40</radius></sphere></geometry>
+        <material>
+          <ambient>0.18 0.32 0.15 1</ambient>     <!-- darker green than olive -->
+          <diffuse>0.25 0.45 0.20 1</diffuse>
+        </material>
+      </visual>
+    </link>
+    <link name="canopy_left">
+      <pose>-1.00 0.30 1.85 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.95</radius></sphere></geometry>
+        <material>
+          <ambient>0.20 0.34 0.16 1</ambient>
+          <diffuse>0.27 0.48 0.22 1</diffuse>
+        </material>
+      </visual>
+    </link>
+    <link name="canopy_right">
+      <pose>1.05 -0.20 1.90 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>1.05</radius></sphere></geometry>
+        <material>
+          <ambient>0.19 0.33 0.15 1</ambient>
+          <diffuse>0.26 0.46 0.21 1</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <!-- A handful of figs (dark purple-burgundy) hanging on the canopy -->
+    <link name="fig_1"><pose> 0.70 0.40 1.60 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.06</radius></sphere></geometry>
+        <material><ambient>0.30 0.10 0.18 1</ambient><diffuse>0.45 0.15 0.25 1</diffuse><specular>0.2 0.1 0.15 1</specular></material>
+      </visual>
+    </link>
+    <link name="fig_2"><pose>-0.50 0.60 1.70 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.055</radius></sphere></geometry>
+        <material><ambient>0.32 0.10 0.20 1</ambient><diffuse>0.48 0.16 0.28 1</diffuse><specular>0.2 0.1 0.15 1</specular></material>
+      </visual>
+    </link>
+    <link name="fig_3"><pose> 0.20 -0.55 1.55 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.05</radius></sphere></geometry>
+        <material><ambient>0.30 0.10 0.18 1</ambient><diffuse>0.45 0.15 0.25 1</diffuse><specular>0.2 0.1 0.15 1</specular></material>
+      </visual>
+    </link>
+    <link name="fig_4"><pose>-0.80 -0.30 1.65 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.055</radius></sphere></geometry>
+        <material><ambient>0.28 0.09 0.17 1</ambient><diffuse>0.42 0.14 0.24 1</diffuse><specular>0.2 0.1 0.15 1</specular></material>
+      </visual>
+    </link>
+    <link name="fig_5"><pose> 0.95 -0.45 1.75 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.05</radius></sphere></geometry>
+        <material><ambient>0.32 0.10 0.20 1</ambient><diffuse>0.48 0.16 0.28 1</diffuse><specular>0.2 0.1 0.15 1</specular></material>
+      </visual>
+    </link>
+
+    <joint name="j_trunk_u"  type="fixed"><parent>trunk_lower</parent><child>trunk_upper</child></joint>
+    <joint name="j_main"     type="fixed"><parent>trunk_lower</parent><child>canopy_main</child></joint>
+    <joint name="j_left"     type="fixed"><parent>trunk_lower</parent><child>canopy_left</child></joint>
+    <joint name="j_right"    type="fixed"><parent>trunk_lower</parent><child>canopy_right</child></joint>
+    <joint name="j_f1"       type="fixed"><parent>trunk_lower</parent><child>fig_1</child></joint>
+    <joint name="j_f2"       type="fixed"><parent>trunk_lower</parent><child>fig_2</child></joint>
+    <joint name="j_f3"       type="fixed"><parent>trunk_lower</parent><child>fig_3</child></joint>
+    <joint name="j_f4"       type="fixed"><parent>trunk_lower</parent><child>fig_4</child></joint>
+    <joint name="j_f5"       type="fixed"><parent>trunk_lower</parent><child>fig_5</child></joint>
+  </model>
+</sdf>

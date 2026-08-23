@@ -1,0 +1,365 @@
+<?xml version="1.0"?>
+<!-- Author: Prof. Anis Koubaa <anis.koubaa@gmail.com> -->
+<!--
+  RAISE 2026 — Gazebo Harmonic sensor + plugin overlay.
+
+  Kept separate from raise2026_robot.urdf.xacro so the robot composition file
+  stays a clean kinematic description, and the sim-only plumbing lives here.
+
+  What this adds:
+    1. RGB-D camera on the wrist            → /wrist_camera/{image,depth_image,camera_info,points}
+    2. 360° 2D LiDAR on top of the Husky    → /scan
+    3. Joint state publisher                → /joint_states  (all arm + gripper joints)
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 1. RGB-D camera on the wrist (RealSense D435 in sim)             -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <gazebo reference="wrist_camera_link">
+    <sensor name="wrist_camera" type="rgbd_camera">
+      <update_rate>30</update_rate>
+      <topic>wrist_camera</topic>
+      <gz_frame_id>wrist_camera_link</gz_frame_id>
+      <camera>
+        <horizontal_fov>1.211</horizontal_fov>   <!-- 69.4° (D435 spec) -->
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip><near>0.1</near><far>10.0</far></clip>
+      </camera>
+      <always_on>true</always_on>
+      <visualize>false</visualize>
+    </sensor>
+  </gazebo>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 2. 2D LiDAR on top of the Husky chassis                          -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- The lidar needs a link to attach to. We add a small "puck" mount. -->
+  <link name="lidar_link">
+    <visual>
+      <geometry><cylinder radius="0.05" length="0.06"/></geometry>
+      <material name="lidar_black">
+        <color rgba="0.10 0.10 0.10 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry><cylinder radius="0.05" length="0.06"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.20"/>
+      <inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/>
+    </inertial>
+  </link>
+
+  <joint name="lidar_mount" type="fixed">
+    <parent link="top_chassis_link"/>
+    <child link="lidar_link"/>
+    <!-- At the FRONT EDGE of the chassis (x=0.48), ahead of the PTZ mast
+         (x=0.30) and the arm (x=0). If the lidar sits at the mast base it
+         scans the mast pole at point-blank range (every beam reads ~0.1 m)
+         and is useless for obstacle avoidance. Out here the forward arc is
+         clear; the rear arc still sees the robot's own body (mast/arm),
+         which is realistic — most robot lidars are occluded behind. -->
+    <origin xyz="0.48 0 0.12" rpy="0 0 0"/>
+  </joint>
+
+  <gazebo reference="lidar_link">
+    <sensor name="laser" type="gpu_lidar">
+      <update_rate>10</update_rate>
+      <topic>scan</topic>
+      <gz_frame_id>lidar_link</gz_frame_id>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>360</samples>
+            <resolution>1.0</resolution>
+            <min_angle>-3.14159</min_angle>
+            <max_angle>3.14159</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.10</min>
+          <max>10.0</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <always_on>true</always_on>
+      <visualize>true</visualize>          <!-- shows red laser rays in Gazebo -->
+    </sensor>
+  </gazebo>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 3. Joint state publisher (publishes all robot joint angles)      -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- update_rate caps the publish frequency at 50 Hz. Without it the   -->
+  <!-- plugin publishes on every physics step (~430 Hz), which floods    -->
+  <!-- the bridge and trips robot_state_publisher's "moved backwards in  -->
+  <!-- time" warnings.                                                   -->
+  <gazebo>
+    <plugin filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher">
+      <topic>joint_states</topic>
+      <update_rate>50</update_rate>
+    </plugin>
+  </gazebo>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 4. Differential drive (cmd_vel → wheel velocities)               -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- Husky's URDF declares ros2_control hardware but doesn't ship a   -->
+  <!-- Gazebo plugin that actually drives the wheels. We add a simple   -->
+  <!-- DiffDrive plugin here — avoids the whole ros2_control stack and  -->
+  <!-- lets `ros2 topic pub /cmd_vel ...` drive the robot directly.     -->
+  <gazebo>
+    <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+      <left_joint>front_left_wheel_joint</left_joint>
+      <left_joint>rear_left_wheel_joint</left_joint>
+      <right_joint>front_right_wheel_joint</right_joint>
+      <right_joint>rear_right_wheel_joint</right_joint>
+
+      <wheel_separation>0.555</wheel_separation>   <!-- Husky wheel_track -->
+      <wheel_radius>0.165</wheel_radius>            <!-- Husky 13" wheels -->
+
+      <topic>/cmd_vel</topic>
+      <odom_topic>/odom</odom_topic>
+      <tf_topic>/tf</tf_topic>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_link</child_frame_id>
+      <odom_publish_frequency>50</odom_publish_frequency>
+    </plugin>
+  </gazebo>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 5. UR5e "hold home pose" controllers                             -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- Without controllers the arm collapses under gravity and the      -->
+  <!-- wrist camera ends up pointing at the chassis — image looks       -->
+  <!-- messy. One JointPositionController per arm joint holds it at a   -->
+  <!-- known-stable pose. The wrist camera then points roughly forward. -->
+  <!--                                                                  -->
+  <!-- Joint targets are a typical UR5e "ready" pose (radians):         -->
+  <!--   shoulder_pan = 0           (face forward)                       -->
+  <!--   shoulder_lift = -π/2       (upper arm horizontal)               -->
+  <!--   elbow = π/2                (forearm vertical, forward)          -->
+  <!--   wrist_1 = -π/2             (wrist horizontal)                   -->
+  <!--   wrist_2 = -π/2             (camera looking forward)             -->
+  <!--   wrist_3 = 0                                                     -->
+  <xacro:macro name="ur_joint_hold" params="joint_name target">
+    <gazebo>
+      <plugin filename="gz-sim-joint-position-controller-system"
+              name="gz::sim::systems::JointPositionController">
+        <joint_name>${joint_name}</joint_name>
+        <topic>/${joint_name}/cmd</topic>
+        <p_gain>1500</p_gain>
+        <i_gain>50</i_gain>
+        <d_gain>80</d_gain>
+        <i_max>10</i_max>
+        <i_min>-10</i_min>
+        <cmd_max>200</cmd_max>
+        <cmd_min>-200</cmd_min>
+        <initial_position>${target}</initial_position>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:ur_joint_hold joint_name="ur5e_shoulder_pan_joint"  target=" 0.0"/>
+  <xacro:ur_joint_hold joint_name="ur5e_shoulder_lift_joint" target="-1.5708"/>
+  <xacro:ur_joint_hold joint_name="ur5e_elbow_joint"         target=" 1.5708"/>
+  <xacro:ur_joint_hold joint_name="ur5e_wrist_1_joint"       target="-1.5708"/>
+  <xacro:ur_joint_hold joint_name="ur5e_wrist_2_joint"       target="-1.5708"/>
+  <xacro:ur_joint_hold joint_name="ur5e_wrist_3_joint"       target=" 0.0"/>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 5b. Robotiq 2F-85 gripper joint controllers                       -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- Two macros, two regimes:                                          -->
+  <!--                                                                  -->
+  <!-- (a) The two KNUCKLE joints are `revolute` with limits [0..0.8]    -->
+  <!--     (left) / [-0.8..0] (right). They're the real controllable     -->
+  <!--     DOF — stiff PID is safe + useful.                              -->
+  <!--                                                                  -->
+  <!-- (b) The four MIMIC'd joints (inner_knuckle, finger_tip) are       -->
+  <!--     `continuous` (no limits) and DART can't enforce the URDF      -->
+  <!--     mimic constraint. A stiff PID on them WINDS UP and the        -->
+  <!--     fingers fly off → that's the "aggressive shaking". Instead    -->
+  <!--     we use a soft-spring + heavy damping that just keeps them     -->
+  <!--     near zero without trying to track external commands.          -->
+
+  <xacro:macro name="gripper_knuckle_hold" params="joint_name target">
+    <gazebo>
+      <plugin filename="gz-sim-joint-position-controller-system"
+              name="gz::sim::systems::JointPositionController">
+        <joint_name>${joint_name}</joint_name>
+        <topic>/${joint_name}/cmd</topic>
+        <p_gain>50</p_gain>
+        <i_gain>0</i_gain>         <!-- no integral → no windup -->
+        <d_gain>8</d_gain>
+        <cmd_max>5</cmd_max>
+        <cmd_min>-5</cmd_min>
+        <initial_position>${target}</initial_position>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+
+  <!-- The four mimic'd continuous joints (inner_knuckle, finger_tip) get  -->
+  <!-- joint-level damping injected into the URDF by sim.launch.py (a      -->
+  <!-- <dynamics damping="50" friction="2"/> on each <axis>). DART applies -->
+  <!-- that as physical viscous friction independent of any PID, so the   -->
+  <!-- joints settle without flying off — no per-joint controller needed. -->
+  <xacro:gripper_knuckle_hold joint_name="gripper_robotiq_85_left_knuckle_joint"  target="0.0"/>
+  <xacro:gripper_knuckle_hold joint_name="gripper_robotiq_85_right_knuckle_joint" target="0.0"/>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 6. PTZ "scouting" camera on top of the Husky                     -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- Two revolute joints (pan around Z, tilt around Y) holding an     -->
+  <!-- RGB camera. Independent of the UR5e — usable for navigation /    -->
+  <!-- crop inspection while the arm is parked.                          -->
+  <!--                                                                  -->
+  <!-- Drive it by publishing std_msgs/Float64 to:                       -->
+  <!--    /ptz/pan/cmd     (radians, ~-π..π)                              -->
+  <!--    /ptz/tilt/cmd    (radians, ~-π/2..+π/4)                          -->
+  <!-- The image stream is on /ptz_camera/image_raw.                     -->
+
+  <!-- ── PTZ mast — vertical pole at the FRONT of the Husky ─────────── -->
+  <!-- Places the camera ~1.5 m above the ground — above the 1.4-m       -->
+  <!-- tomato plants — with a clear forward view of crops + trees.       -->
+  <link name="ptz_mast_link">
+    <visual>
+      <geometry><cylinder radius="0.022" length="1.20"/></geometry>
+      <material name="mast_dark"><color rgba="0.25 0.25 0.27 1.0"/></material>
+    </visual>
+    <collision><geometry><cylinder radius="0.022" length="1.20"/></geometry></collision>
+    <inertial>
+      <mass value="0.40"/>
+      <inertia ixx="0.05" ixy="0" ixz="0" iyy="0.05" iyz="0" izz="1e-4"/>
+    </inertial>
+  </link>
+  <joint name="ptz_mast_mount" type="fixed">
+    <parent link="top_chassis_link"/>
+    <child link="ptz_mast_link"/>
+    <!-- 0.30 m forward of chassis centre, mast centre 0.60 m above top  -->
+    <origin xyz="0.30 0 0.60" rpy="0 0 0"/>
+  </joint>
+
+  <!-- PTZ base — bolted to the top of the mast -->
+  <link name="ptz_base_link">
+    <visual>
+      <geometry><box size="0.08 0.08 0.04"/></geometry>
+      <material name="ptz_dark"><color rgba="0.18 0.18 0.20 1.0"/></material>
+    </visual>
+    <collision><geometry><box size="0.08 0.08 0.04"/></geometry></collision>
+    <inertial>
+      <mass value="0.20"/>
+      <inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/>
+    </inertial>
+  </link>
+  <joint name="ptz_base_mount" type="fixed">
+    <parent link="ptz_mast_link"/>
+    <child link="ptz_base_link"/>
+    <!-- Sits right on the top of the mast (mast half-length = 0.60). -->
+    <origin xyz="0 0 0.62" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Pan stage — yaw around Z -->
+  <link name="ptz_pan_link">
+    <visual>
+      <geometry><cylinder radius="0.035" length="0.04"/></geometry>
+      <material name="ptz_grey"><color rgba="0.35 0.35 0.38 1.0"/></material>
+    </visual>
+    <collision>
+      <geometry><cylinder radius="0.035" length="0.04"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.10"/>
+      <inertia ixx="5e-5" ixy="0" ixz="0" iyy="5e-5" iyz="0" izz="5e-5"/>
+    </inertial>
+  </link>
+  <joint name="ptz_pan_joint" type="revolute">
+    <parent link="ptz_base_link"/>
+    <child link="ptz_pan_link"/>
+    <origin xyz="0 0 0.04" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.1416" upper="3.1416" effort="20" velocity="3.0"/>
+  </joint>
+
+  <!-- Tilt stage + camera mount — pitch around Y -->
+  <link name="ptz_camera_link">
+    <visual>
+      <geometry><box size="0.08 0.05 0.04"/></geometry>
+      <material name="ptz_lens"><color rgba="0.10 0.10 0.10 1.0"/></material>
+    </visual>
+    <collision>
+      <geometry><box size="0.08 0.05 0.04"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.10"/>
+      <inertia ixx="5e-5" ixy="0" ixz="0" iyy="5e-5" iyz="0" izz="5e-5"/>
+    </inertial>
+  </link>
+  <joint name="ptz_tilt_joint" type="revolute">
+    <parent link="ptz_pan_link"/>
+    <child link="ptz_camera_link"/>
+    <origin xyz="0.025 0 0.025" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <!-- -90° (full down) .. +45° (slightly up) -->
+    <limit lower="-1.5708" upper="0.7854" effort="20" velocity="3.0"/>
+  </joint>
+
+  <!-- ── Camera sensor on the tilt link ────────────────────────────── -->
+  <!-- Using rgbd_camera type (same as wrist) — confirmed-working in     -->
+  <!-- Gazebo Harmonic. Plain "camera" type didn't render in this combo. -->
+  <gazebo reference="ptz_camera_link">
+    <sensor name="ptz_camera" type="rgbd_camera">
+      <update_rate>15</update_rate>
+      <topic>ptz_camera</topic>
+      <gz_frame_id>ptz_camera_link</gz_frame_id>
+      <camera>
+        <horizontal_fov>1.20</horizontal_fov>      <!-- ~69° -->
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip><near>0.10</near><far>50.0</far></clip>
+      </camera>
+      <always_on>true</always_on>
+      <visualize>false</visualize>
+    </sensor>
+  </gazebo>
+
+  <!-- ── Position controllers for pan + tilt ───────────────────────── -->
+  <gazebo>
+    <plugin filename="gz-sim-joint-position-controller-system"
+            name="gz::sim::systems::JointPositionController">
+      <joint_name>ptz_pan_joint</joint_name>
+      <topic>/ptz/pan/cmd</topic>
+      <p_gain>200</p_gain>
+      <i_gain>5</i_gain>
+      <d_gain>20</d_gain>
+      <cmd_max>30</cmd_max>
+      <cmd_min>-30</cmd_min>
+      <initial_position>0.0</initial_position>
+    </plugin>
+  </gazebo>
+  <gazebo>
+    <plugin filename="gz-sim-joint-position-controller-system"
+            name="gz::sim::systems::JointPositionController">
+      <joint_name>ptz_tilt_joint</joint_name>
+      <topic>/ptz/tilt/cmd</topic>
+      <p_gain>200</p_gain>
+      <i_gain>5</i_gain>
+      <d_gain>20</d_gain>
+      <cmd_max>30</cmd_max>
+      <cmd_min>-30</cmd_min>
+      <!-- Start tilted ~17° down so crops are framed by default -->
+      <initial_position>0.3</initial_position>
+    </plugin>
+  </gazebo>
+
+</robot>

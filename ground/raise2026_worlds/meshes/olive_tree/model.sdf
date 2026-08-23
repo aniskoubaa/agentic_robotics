@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<!-- Author: Prof. Anis Koubaa <anis.koubaa@gmail.com> -->
+<sdf version="1.10">
+  <model name="olive_tree">
+    <static>true</static>
+
+    <!-- Trunk -->
+    <link name="trunk">
+      <pose>0 0 1.2 0 0 0</pose>
+      <visual name="v"><geometry><cylinder><radius>0.18</radius><length>2.4</length></cylinder></geometry>
+        <material>
+          <ambient>0.28 0.22 0.16 1</ambient>
+          <diffuse>0.42 0.32 0.22 1</diffuse>
+          <specular>0.05 0.04 0.03 1</specular>
+        </material>
+      </visual>
+      <collision name="c"><geometry><cylinder><radius>0.18</radius><length>2.4</length></cylinder></geometry></collision>
+    </link>
+
+    <!-- Canopy: 3 overlapping ellipsoid-like spheres in silvery-olive green -->
+    <link name="canopy_main">
+      <pose>0 0 2.9 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>1.1</radius></sphere></geometry>
+        <material>
+          <ambient>0.40 0.46 0.30 1</ambient>
+          <diffuse>0.55 0.62 0.42 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
+      </visual>
+    </link>
+    <link name="canopy_left">
+      <pose>-0.7 0.1 2.7 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.75</radius></sphere></geometry>
+        <material>
+          <ambient>0.42 0.48 0.32 1</ambient>
+          <diffuse>0.58 0.65 0.45 1</diffuse>
+        </material>
+      </visual>
+    </link>
+    <link name="canopy_right">
+      <pose>0.7 -0.15 2.75 0 0 0</pose>
+      <visual name="v"><geometry><sphere><radius>0.80</radius></sphere></geometry>
+        <material>
+          <ambient>0.40 0.46 0.30 1</ambient>
+          <diffuse>0.56 0.62 0.42 1</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <joint name="j_main"  type="fixed"><parent>trunk</parent><child>canopy_main</child></joint>
+    <joint name="j_left"  type="fixed"><parent>trunk</parent><child>canopy_left</child></joint>
+    <joint name="j_right" type="fixed"><parent>trunk</parent><child>canopy_right</child></joint>
+  </model>
+</sdf>
