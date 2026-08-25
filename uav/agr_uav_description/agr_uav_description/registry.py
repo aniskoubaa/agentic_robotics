@@ -35,7 +35,26 @@ class Airframe:
     px4_model: str
     sys_autostart: int
     description: str = ''
+    camera_link: str = ''
     capabilities: Dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def has_camera(self) -> bool:
+        return bool(self.camera_link)
+
+    def gz_model_name(self, instance: int = 0) -> str:
+        """What Gazebo calls this vehicle.
+
+        PX4 strips its own 'gz_' prefix and appends the instance number, so
+        gz_x500_mono_cam instance 0 is the Gazebo model 'x500_mono_cam_0'.
+        """
+        base = self.px4_model[3:] if self.px4_model.startswith('gz_') else self.px4_model
+        return f'{base}_{instance}'
+
+    def gz_camera_topic(self, world: str, instance: int = 0) -> str:
+        """Full Gazebo transport topic for this airframe's camera image."""
+        return (f'/world/{world}/model/{self.gz_model_name(instance)}'
+                f'/link/{self.camera_link}/sensor/camera/image')
 
     # -- capability shortcuts, so callers don't index dicts by hand ----------
     @property
@@ -77,5 +96,6 @@ def load_airframe(name: str) -> Airframe:
         px4_model=entry['px4_model'],
         sys_autostart=int(entry['sys_autostart']),
         description=entry.get('description', ''),
+        camera_link=entry.get('camera_link', '') or '',
         capabilities=entry.get('capabilities', {}) or {},
     )

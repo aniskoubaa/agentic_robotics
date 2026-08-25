@@ -29,6 +29,12 @@ airframes:
     px4_model:      gz_x500_mono_cam
     sys_autostart:  4010
     description:    "X500 with a forward monocular camera — for perception labs."
+    # Gazebo sensor link that carries the camera. Present ONLY on airframes
+    # that actually have one, so the launch file can decide whether to start a
+    # bridge rather than guessing from the name. The full gz topic is built at
+    # launch time because it embeds both the world and the PX4 instance:
+    #   /world/<world>/model/<model>_<n>/link/<camera_link>/sensor/camera/image
+    camera_link:    camera_link
     capabilities:
       airframe_class:     multirotor
       can_hover:          true

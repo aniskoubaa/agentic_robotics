@@ -67,7 +67,31 @@ def _setup(context, *_args, **_kwargs):
         px4_dir=arg('px4_dir'),
     )
 
+    # Camera bridge, only for airframes that declare one. The UAV stack has
+    # no ros_gz_bridge otherwise — PX4 telemetry comes over XRCE-DDS, which is
+    # a different path entirely — so this is the one thing that has to cross
+    # from Gazebo transport into ROS. Started with PX4 rather than with the
+    # server because the model does not exist until PX4 spawns it, and the
+    # bridge would advertise a topic that never carries anything.
+    if frame.has_camera:
+        gz_img = frame.gz_camera_topic(arg('world'), instance)
+        ros_img = f'/{namespace}/camera' if namespace else '/camera'
+        actions.append(LogInfo(msg=f'[agr_uav] camera: {gz_img} → {ros_img}'))
+        camera_bridge = Node(
+            package='ros_gz_bridge', executable='parameter_bridge',
+            name='camera_bridge', output='screen',
+            arguments=[f'{gz_img}@sensor_msgs/msg/Image[gz.msgs.Image',
+                       f'{gz_img.rsplit("/", 1)[0]}/camera_info'
+                       f'@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo'],
+            remappings=[(gz_img, ros_img),
+                        (f'{gz_img.rsplit("/", 1)[0]}/camera_info',
+                         f'{ros_img}/camera_info')])
+    else:
+        camera_bridge = None
+
     after_ready = [px4]
+    if camera_bridge is not None:
+        after_ready.append(camera_bridge)
     if arg('monitor').lower() in ('true', '1', 'yes'):
         after_ready.append(Node(
             package='agr_uav_tools',
