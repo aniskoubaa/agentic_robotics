@@ -1,8 +1,8 @@
 # Author: Prof. Anis Koubaa <anis.koubaa@gmail.com>
-from setuptools import setup
-from glob import glob
 
-package_name = 'agr_legged_bringup'
+from setuptools import setup
+
+package_name = 'agr_legged_teleop'
 
 setup(
     name=package_name,
@@ -11,19 +11,17 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name + '/launch', glob('launch/*.py')),
-        ('share/' + package_name + '/config', glob('config/*.yaml')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='Anis Koubaa',
     maintainer_email='anis.koubaa@gmail.com',
-    description='Agentic Robotics — Unitree Go2 quadruped bringup.',
+    description='Go2 teleop: keyboard gait driving and camera view.',
     license='MIT',
     entry_points={
         'console_scripts': [
-            'stand = agr_legged_bringup.stand:main',
-            'gait  = agr_legged_bringup.gait:main',
+            'teleop_keyboard = agr_legged_teleop.teleop_keyboard:main',
+            'camera_view     = agr_legged_teleop.camera_view:main',
         ],
     },
 )

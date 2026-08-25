@@ -90,10 +90,33 @@ def _setup(context, *_a, **_k):
     bridge = Node(
         package='ros_gz_bridge', executable='parameter_bridge', output='screen',
         arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-                   '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU'])
+                   '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
+                   # Head camera. The gz side is /front_camera because the
+                   # sensor names its own <topic>; without that tag sdformat
+                   # lumps the fixed head link into base_link and the topic
+                   # comes out as /head_front_camera instead.
+                   '/front_camera@sensor_msgs/msg/Image[gz.msgs.Image',
+                   '/front_camera/camera_info@sensor_msgs/msg/CameraInfo'
+                   '[gz.msgs.CameraInfo'])
 
+    want_gait = arg('gait').lower() in ('true', '1', 'yes')
+
+    # stand must EXIT rather than spin forever holding the pose. The position
+    # controller keeps its last command on its own, so nothing is lost by
+    # quitting — and a lingering publisher is actively harmful: everything
+    # else that drives the joints (the gait controller, the pose examples)
+    # then has to share one position controller with it, and the legs get
+    # whichever message happened to land last. --hold finishes the ramp,
+    # lets it settle, and quits.
+    stand_args = ['--pose', arg('pose'), '--hold', '1.0']
     stand = Node(package='agr_legged_bringup', executable='stand', output='screen',
-                 arguments=['--pose', arg('pose')])
+                 arguments=stand_args)
+
+    # The gait controller is what makes /cmd_vel mean anything on a legged
+    # robot. It holds a still stance until someone publishes, so starting it
+    # by default costs nothing and every teleop/example script then Just
+    # Works without a second terminal.
+    gait = Node(package='agr_legged_bringup', executable='gait', output='screen')
 
     actions = [
         LogInfo(msg=f'[agr_legged] Unitree Go2 — 12 DOF, world: {world}, '
@@ -103,8 +126,16 @@ def _setup(context, *_a, **_k):
         RegisterEventHandler(OnProcessExit(target_action=spawn, on_exit=[jsb])),
         RegisterEventHandler(OnProcessExit(target_action=jsb, on_exit=[jgpc])),
     ]
-    if arg('stand').lower() in ('true', '1', 'yes'):
-        actions.append(RegisterEventHandler(OnProcessExit(target_action=jgpc, on_exit=[stand])))
+    want_stand = arg('stand').lower() in ('true', '1', 'yes')
+    if want_stand:
+        actions.append(RegisterEventHandler(
+            OnProcessExit(target_action=jgpc, on_exit=[stand])))
+        if want_gait:
+            actions.append(RegisterEventHandler(
+                OnProcessExit(target_action=stand, on_exit=[gait])))
+    elif want_gait:
+        actions.append(RegisterEventHandler(
+            OnProcessExit(target_action=jgpc, on_exit=[gait])))
     return actions
 
 
@@ -124,6 +155,9 @@ def generate_launch_description() -> LaunchDescription:
                                           'drops the robot ~15 mm onto its feet'),
         DeclareLaunchArgument('pose', default_value='stand'),
         DeclareLaunchArgument('stand', default_value='true'),
+        DeclareLaunchArgument('gait', default_value='true',
+                              description='start the trot gait controller so '
+                                          '/cmd_vel drives the robot'),
         DeclareLaunchArgument('meshes', default_value='auto',
                               description='auto | true | false — official .dae visuals'),
         OpaqueFunction(function=_setup),

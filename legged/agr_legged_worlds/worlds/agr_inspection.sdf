@@ -8,6 +8,22 @@
 -->
 <sdf version="1.9">
   <world name="agr_inspection">
+    <!-- Rendering-sensor system. Cameras are rendered by a WORLD-level system,
+         not by the model that owns them: with no <plugin> tags at all, gz sim
+         falls back to its default set, which has no Sensors system, and a
+         camera declared in the URDF then advertises nothing at all - no error,
+         just a topic that never exists. Physics/UserCommands/SceneBroadcaster
+         must be listed too, because naming ANY plugin here replaces the whole
+         default set rather than adding to it.                              -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
     <physics type="ode">
       <max_step_size>0.002</max_step_size>
       <real_time_factor>1.0</real_time_factor>

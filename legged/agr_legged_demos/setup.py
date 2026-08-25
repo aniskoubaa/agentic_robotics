@@ -1,8 +1,8 @@
 # Author: Prof. Anis Koubaa <anis.koubaa@gmail.com>
-from setuptools import setup
-from glob import glob
 
-package_name = 'agr_legged_bringup'
+from setuptools import setup
+
+package_name = 'agr_legged_demos'
 
 setup(
     name=package_name,
@@ -11,19 +11,17 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name + '/launch', glob('launch/*.py')),
-        ('share/' + package_name + '/config', glob('config/*.yaml')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='Anis Koubaa',
     maintainer_email='anis.koubaa@gmail.com',
-    description='Agentic Robotics — Unitree Go2 quadruped bringup.',
+    description='Go2 demos and diagnostics.',
     license='MIT',
     entry_points={
         'console_scripts': [
-            'stand = agr_legged_bringup.stand:main',
-            'gait  = agr_legged_bringup.gait:main',
+            'diagnose        = agr_legged_demos.diagnose:main',
+            'demo_walkabout  = agr_legged_demos.demo_walkabout:main',
         ],
     },
 )
