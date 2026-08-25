@@ -1,9 +1,9 @@
 # Ground platform
 
-The AgriBot stack (originally the AgriBot summer-school stack), brought across **unmodified**: same package
+The RaiseBot stack (originally the RaiseBot summer-school stack), brought across **unmodified**: same package
 names, same launch files, same labs. Nothing was renamed.
 
-## Why the names are still `agribot_*`
+## Why the names are still `raisebot_*`
 
 Renaming these to `agr_ground_*` would touch every import, entry point, launch
 reference and alias across ~140 files — including the Day-2 VLA labs, which
@@ -19,13 +19,13 @@ the labs actually exercised — not a side effect of moving folders.
 
 | Package | Purpose |
 |---|---|
-| `agribot_bringup` | `sim.launch.py`, `world_only.launch.py`, ros_gz bridge config |
-| `agribot_worlds` | `greenhouse_2026.sdf`, `greenhouse_2026_lite.sdf` + plant/tree/chicken meshes |
-| `agribot_description` | Husky + UR arm + Robotiq gripper URDF/xacro |
-| `agribot_tools` | Tool servers: gripper, navigation, move_to_pose, detector (YOLO), inspector (VLM), grasp |
-| `agribot_teleop` | Keyboard, phone (Flask) and joystick teleop; camera view |
-| `agribot_labs` | Day 1–3 exercises: ROS 2 tools as functions, agentic inspector, teleop + data collection, VLA executor, full stack, hackathon |
-| `agribot_demos` | One-command demo scripts |
+| `raisebot_bringup` | `sim.launch.py`, `world_only.launch.py`, ros_gz bridge config |
+| `raisebot_worlds` | `greenhouse_2026.sdf`, `greenhouse_2026_lite.sdf` + plant/tree/chicken meshes |
+| `raisebot_description` | Husky + UR arm + Robotiq gripper URDF/xacro |
+| `raisebot_tools` | Tool servers: gripper, navigation, move_to_pose, detector (YOLO), inspector (VLM), grasp |
+| `raisebot_teleop` | Keyboard, phone (Flask) and joystick teleop; camera view |
+| `raisebot_labs` | Day 1–3 exercises: ROS 2 tools as functions, agentic inspector, teleop + data collection, VLA executor, full stack, hackathon |
+| `raisebot_demos` | One-command demo scripts |
 
 ## Running
 
@@ -58,7 +58,7 @@ agr_vla_hf           # force the public HF brain even if a local one exists
 These run under the **LeRobot venv**, not system python — LeRobot pulls
 numpy 2.x, which is incompatible with the apt `cv_bridge` the rest of the stack
 uses. Point `AGR_LEROBOT_PY` at your venv; it must be created with
-`--system-site-packages` so it can still see `rclpy` and `agribot_*`.
+`--system-site-packages` so it can still see `rclpy` and `raisebot_*`.
 
 ## Not carried over
 

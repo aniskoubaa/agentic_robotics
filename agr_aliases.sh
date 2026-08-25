@@ -3,7 +3,7 @@
 #
 #     source ~/ros2_ws/src/agentic_robotics/agr_aliases.sh
 #
-# Namespaced `agr_*` so it never collides with the AgriBot alias block.
+# Namespaced `agr_*` so it never collides with the RaiseBot alias block.
 
 _AGR_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 export AGR_SRC="${_AGR_DIR}"
@@ -60,20 +60,20 @@ alias agr_status='agr_echo vehicle_status'
 alias agr_pos='agr_echo vehicle_local_position'
 alias agr_batt='agr_echo battery_status'
 
-# ── ground platform (AgriBot stack, unmodified) ──────────────────────────
+# ── ground platform (RaiseBot stack, unmodified) ──────────────────────────
 alias agr_ground='agr-sim ground'
 alias agr_ground_lite='agr-sim ground world:=greenhouse_2026_lite.sdf'
-alias agr_drive='ros2 run agribot_teleop teleop_keyboard'
-alias agr_cam='ros2 run agribot_teleop camera_view'
+alias agr_drive='ros2 run raisebot_teleop teleop_keyboard'
+alias agr_cam='ros2 run raisebot_teleop camera_view'
 alias agr_ground_topics='ros2 topic list | grep -E "cmd_vel|scan|camera|joint_states|odom"'
 
 # ── Day-2 VLA labs ──────────────────────────────────────────────────────────
 # These import LeRobot, which pulls numpy 2.x — incompatible with the apt
 # cv_bridge the rest of the stack uses. So they run under their own venv rather
 # than the system python. The venv is created with system-site-packages, so it
-# still sees rclpy and the agribot_* packages.
+# still sees rclpy and the raisebot_* packages.
 export AGR_LEROBOT_PY="${AGR_LEROBOT_PY:-$HOME/raise_venvs/lerobot/bin/python3}"
-export AGR_D2="${AGR_SRC}/ground/agribot_labs/day2"
+export AGR_D2="${AGR_SRC}/ground/raisebot_labs/day2"
 
 # The reference policy is PUBLIC on Hugging Face — no token, no manual download.
 # api_clients/vla_client/factory.py resolves in this order:
@@ -85,7 +85,7 @@ export AGR_VLA_HF_REF="scalexi/smolvla-raise2026-ripeness-ref"
 _agr_vla() {
   if [ ! -x "${AGR_LEROBOT_PY}" ]; then
     echo "✗ LeRobot venv not found at ${AGR_LEROBOT_PY}"
-    echo "  Set AGR_LEROBOT_PY, or create it — see ground/agribot_labs/day2/HOW_TO_TRAIN_AND_USE.md"
+    echo "  Set AGR_LEROBOT_PY, or create it — see ground/raisebot_labs/day2/HOW_TO_TRAIN_AND_USE.md"
     return 1
   fi
   "${AGR_LEROBOT_PY}" "$@"
