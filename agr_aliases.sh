@@ -38,7 +38,11 @@ alias agr_src='cd "${AGR_SRC}"'
 # ── inspect ─────────────────────────────────────────────────────────────────
 alias agr_airframes='ros2 run agr_uav_tools list_airframes'
 alias agr_monitor='ros2 run agr_uav_tools vehicle_monitor'
-alias agr_check='ros2 run agr_uav_labs 01_check_bridge'
+alias agr_check='ros2 run agr_uav_demos diagnose'
+alias agr_check_bridge='ros2 run agr_uav_labs 01_check_bridge'
+alias agr_fly='ros2 run agr_uav_teleop teleop_keyboard'
+alias agr_uav_cam='ros2 run agr_uav_teleop camera_view'
+alias agr_uav_demo='ros2 run agr_uav_demos demo_flight'
 alias agr_topics='ros2 topic list | grep -E "^/(px4_[0-9]+/)?fmu" || echo "no /fmu topics — start agr-sim first"'
 
 # PX4 version-suffixes some topics (vehicle_status_v4) and not others
@@ -60,11 +64,15 @@ alias agr_status='agr_echo vehicle_status'
 alias agr_pos='agr_echo vehicle_local_position'
 alias agr_batt='agr_echo battery_status'
 
-# ── ground platform (RaiseBot stack, unmodified) ──────────────────────────
-alias agr_ground='agr-sim ground'
-alias agr_ground_lite='agr-sim ground world:=greenhouse_2026_lite.sdf'
+# ── ground platform (RaiseBot) ─────────────────────────────────────────────
+# tools:=true starts the six service servers. Without them every service call
+# blocks FOREVER, which is what a "hanging" lab almost always turns out to be.
+alias agr_ground='agr-sim ground tools:=true'
+alias agr_ground_lite='agr-sim ground tools:=true world:=greenhouse_2026_lite.sdf'
 alias agr_drive='ros2 run raisebot_teleop teleop_keyboard'
 alias agr_cam='ros2 run raisebot_teleop camera_view'
+alias agr_ground_check='ros2 run raisebot_demos diagnose'
+alias agr_ground_demo='ros2 run raisebot_demos demo_greenhouse'
 alias agr_ground_topics='ros2 topic list | grep -E "cmd_vel|scan|camera|joint_states|odom"'
 
 # ── Day-2 VLA labs ──────────────────────────────────────────────────────────
@@ -101,49 +109,78 @@ alias agr_vla_hf='VLA_LOCAL_CKPT="${AGR_VLA_HF_REF}" _agr_vla "${AGR_D2}/day2_02
 
 # ── legged platform (Unitree Go2) ───────────────────────────────────────────
 alias agr_legged='agr-sim legged'
-alias agr_stand='ros2 run agr_legged_bringup stand'
-alias agr_crouch='ros2 run agr_legged_bringup stand --pose crouch'
-alias agr_tuck='ros2 run agr_legged_bringup stand --pose tuck'
-alias agr_legged_joints='ros2 topic echo /joint_states --once'
+alias agr_walk='ros2 run agr_legged_teleop teleop_keyboard'
+alias agr_legged_cam='ros2 run agr_legged_teleop camera_view'
+alias agr_legged_check='ros2 run agr_legged_demos diagnose'
+alias agr_legged_demo='ros2 run agr_legged_demos demo_walkabout'
+# Pose commands need the gait controller stopped — it publishes to the same
+# position controller at 100 Hz and two publishers thrash the robot over.
+alias agr_stand='ros2 run agr_legged_examples 04_change_pose --ros-args -p pose:=stand'
+alias agr_crouch='ros2 run agr_legged_examples 04_change_pose --ros-args -p pose:=crouch'
+alias agr_tuck='ros2 run agr_legged_examples 04_change_pose --ros-args -p pose:=tuck'
+alias agr_legged_joints='ros2 run agr_legged_examples 01_read_joints'
 
 agr_help() {
   cat <<'HELP'
-Agentic Robotics — UAV track
+Agentic Robotics — three platforms, the same three layers on each.
 
-  UAV        agr-sim                       one x500, Gazebo GUI
-             agr-sim headless:=true        no GUI
-             agr-sim world:=agr_city       urban world
-             agr-sim world:=agr_defense    secured installation
-             agr-sim airframe:=rc_cessna   fixed-wing (cannot hover)
-             agr-sim uav --multi count:=3  three vehicles
+  Every platform has:  teleop (drive it) · examples (learn it) · demos (show
+  it / diagnose it).  When something is wrong, run the diagnose first.
 
-  GROUND     agr-sim ground                Husky in the greenhouse
-             agr_ground_lite               lighter world (CPU-only machines)
-             agr_drive                     keyboard teleop
-             agr_cam                       camera view
+  START A ROBOT
+    agr-sim                            UAV: one x500, Gazebo GUI
+    agr-sim airframe:=x500_mono_cam    ...with a camera
+    agr-sim airframe:=rc_cessna        ...fixed-wing (cannot hover)
+    agr-sim world:=agr_city            ...urban world
+    agr-sim uav --multi count:=3       ...three vehicles
+    agr_ground                         RaiseBot Husky + greenhouse + tools
+    agr_ground_lite                    ...lighter world (CPU-only machines)
+    agr_legged                         Unitree Go2 on the inspection site
+    agr-stop                           stop whichever is running
+    add headless:=true to any of them for no GUI
 
-  LEGGED     agr-sim legged                Unitree Go2 on the inspection site
-             agr_stand / agr_crouch / agr_tuck
-             agr_legged_joints             12 joint positions
+  IS IT WORKING?
+    agr_check                          UAV    — 9 checks
+    agr_ground_check                   ground — 10 checks
+    agr_legged_check                   legged — 9 checks
+    ros2 run agr_uav_demos diagnose --ros-args -p active:=true   (really arms it)
 
-  stop       agr-stop                      SIGINT then SIGKILL, any stack
+  DRIVE IT BY HAND
+    agr_fly                            UAV keyboard flight (t=takeoff, l=land)
+    agr_drive                          Husky keyboard
+    agr_walk                           Go2 keyboard (q/e strafe — no wheels can)
+    agr_uav_cam / agr_cam / agr_legged_cam        live camera window
 
-  build      agr-build                     colcon with the correct python
-             agr-build --packages-select agr_uav_tools
+  SHOW IT OFF
+    agr_uav_demo                       arm, climb, orbit, land
+    agr_ground_demo                    narrated greenhouse inspection
+    agr_legged_demo                    walk, strafe, turn on the spot
 
-  inspect    agr_airframes                 the airframe registry
-             agr_check                     lab 01: is the bridge alive?
-             agr_topics                    /fmu topics
-             agr_status / agr_pos / agr_batt
-             agr_echo <name> [namespace]   any /fmu/out topic
+  LEARN IT — six scripts per platform, one idea each
+    ros2 run agr_uav_examples 01_read_telemetry     ... 06_list_airframes
+    ros2 run raisebot_examples 01_drive             ... 06_navigate
+    ros2 run agr_legged_examples 01_read_joints     ... 06_walk_a_square
+    (tab-completion after the package name lists all six)
 
-  VLA (day2) agr_vla_one                    one inference step
-             agr_vla                        full executor
-             agr_vla_hf                     force the public HF brain
-             agr_record / agr_replay        teleop data collection
-             agr_finetune                   fine-tune SmolVLA
-             (these run under the LeRobot venv, not system python)
+  POSES (legged)   agr_stand / agr_crouch / agr_tuck
+                   needs the gait stopped:  agr-sim legged gait:=false
 
-  navigate   agr_ws / agr_src
+  BUILD            agr-build                    colcon with the right python
+                   agr-build --packages-select agr_uav_tools
+
+  INSPECT (UAV)    agr_airframes                the airframe registry
+                   agr_monitor                  live vehicle state
+                   agr_topics                   /fmu topics
+                   agr_status / agr_pos / agr_batt
+                   agr_echo <name> [namespace]  any /fmu/out topic
+
+  VLA (day2)       agr_vla_one                  one inference step
+                   agr_vla                      full executor
+                   agr_vla_hf                   force the public HF brain
+                   agr_record / agr_replay      teleop data collection
+                   agr_finetune                 fine-tune SmolVLA
+                   (these run under the LeRobot venv, not system python)
+
+  NAVIGATE         agr_ws / agr_src
 HELP
 }

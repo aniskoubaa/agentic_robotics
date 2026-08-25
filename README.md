@@ -21,14 +21,19 @@ agr-sim                                  # one x500, Gazebo GUI
 agr-sim headless:=true                   # no GUI
 agr-sim airframe:=rc_cessna              # fixed-wing
 agr-sim --multi count:=3                 # three vehicles
+agr-sim ground tools:=true               # RaiseBot + its service servers
+agr-sim legged                           # Unitree Go2
 agr-stop                                 # stop everything
 agr_help                                 # every command
 ```
 
-Check it works:
+Check it works — every platform has one, and it is the first thing to run
+when anything is odd:
 
 ```bash
-ros2 run agr_uav_labs 01_check_bridge
+ros2 run agr_uav_demos diagnose        # UAV
+ros2 run raisebot_demos diagnose       # ground
+ros2 run agr_legged_demos diagnose     # legged
 ```
 
 ---
@@ -40,35 +45,75 @@ Platforms live in separate subtrees and share exactly one package. Nothing in
 structure's whole job, so a new platform is a new folder rather than an edit
 everywhere.
 
+Each platform carries the **same three teaching layers**, so what you learn on
+one transfers to the next:
+
+| layer | what it is for |
+|---|---|
+| `*_teleop` | drive it by hand |
+| `*_examples` | six short scripts, one idea each |
+| `*_demos` | `diagnose` when it is broken, `demo_*` when someone is watching |
+
 ```
 agentic_robotics/
 ├── agr-sim  agr-stop  agr-build      # the only commands you type
 ├── agr_aliases.sh  setup.sh
 ├── common/
 │   └── agr_core/                     # interfaces shared by ALL platforms
-├── uav/
+├── uav/                              # PX4 SITL
 │   ├── agr_uav_bringup/              # single- and multi-vehicle launch
 │   ├── agr_uav_description/          # airframe registry + capabilities
-│   ├── agr_uav_tools/                # PX4 topic resolver, vehicle_monitor
+│   ├── agr_uav_tools/                # PX4 topic resolver, offboard Pilot
 │   ├── agr_uav_worlds/               # agr_city, agr_defense
+│   ├── agr_uav_teleop/               # keyboard flight, camera view
+│   ├── agr_uav_examples/             # 01..06
+│   ├── agr_uav_demos/                # diagnose, demo_flight
 │   └── agr_uav_labs/                 # numbered exercises
-└── ground/                           # RaiseBot stack, unmodified
-    ├── raisebot_bringup/            # Husky + greenhouse launch
-    ├── raisebot_worlds/             # greenhouse_2026(_lite)
-    ├── raisebot_description/        # Husky + UR arm + Robotiq gripper
-    ├── raisebot_tools/              # gripper / nav / detector / inspector servers
-    ├── raisebot_teleop/             # keyboard, phone, joystick
-    ├── raisebot_labs/               # Day 1-3 exercises
-    └── raisebot_demos/
+├── ground/                           # RaiseBot: Husky + UR5e + Robotiq
+│   ├── raisebot_bringup/             # greenhouse launch + tools.launch.py
+│   ├── raisebot_worlds/              # greenhouse_2026(_lite)
+│   ├── raisebot_description/         # Husky + arm + gripper + PTZ mast
+│   ├── raisebot_tools/               # gripper / nav / detector / inspector servers
+│   ├── raisebot_teleop/              # keyboard, phone, joystick
+│   ├── raisebot_examples/            # 01..06
+│   ├── raisebot_demos/               # diagnose, demo_greenhouse
+│   └── raisebot_labs/                # Day 1-3 exercises
+└── legged/                           # Unitree Go2, 12 DOF
+    ├── agr_legged_bringup/           # launch + stand + trot gait
+    ├── agr_legged_description/       # URDF, head camera
+    ├── agr_legged_worlds/            # agr_inspection: stairs, pipes, debris
+    ├── agr_legged_teleop/            # keyboard (incl. strafe), camera view
+    ├── agr_legged_examples/          # 01..06
+    └── agr_legged_demos/             # diagnose, demo_walkabout
 ```
 
-`legged/` slots in the same way when you add it; `common/agr_core` is already
-platform-neutral.
+`common/agr_core` is platform-neutral and is the only thing all three share.
 
-**Ground packages keep their `raisebot_*` names on purpose** — see
-`ground/README.md`. Renaming would touch ~140 files including VLA labs that
-need a GPU and checkpoints to verify, and an unverifiable rename is how a
-working course quietly breaks.
+---
+
+## Learning across the three
+
+The examples are numbered to be read in order, and two pairs are worth running
+back to back:
+
+**The same square, on two platforms.** `agr_uav_examples 04_fly_a_square`
+closes a 20 m square to about **0.10 m**. `agr_legged_examples
+06_walk_a_square` finishes roughly **10° off heading** and metres away, and
+grades itself from the IMU. Flying is not easier than walking — PX4 runs a
+state estimator and a position controller, so "go to (5, 0)" is a closed loop
+that keeps correcting. The legged gait is open loop and nothing ever checks.
+That contrast is the argument for everything in the labs.
+
+**Topic versus service.** `raisebot_examples 01_drive` publishes a velocity and
+hopes; `05_call_a_service` calls a function that answers. "Did the gripper
+close?" has an answer, "drive at 0.3 m/s" does not — and an LLM can call a
+function but cannot run a control loop. That is why `raisebot_tools` exists.
+
+**What legs buy you.** `agr_legged_teleop`'s `q` and `e` strafe: the Go2 walks
+sideways without turning. A differential-drive base cannot do that at any
+speed.
+
+---
 
 ---
 
@@ -84,8 +129,13 @@ agr-sim uav --multi count:=3             # three vehicles
 
 # Ground (RaiseBot)
 agr-sim ground                           # Husky in the greenhouse
+agr-sim ground tools:=true               # ...and the six service servers
 agr-sim ground world:=greenhouse_2026_lite.sdf
 agr-sim ground --world-only
+
+# Legged (Unitree Go2)
+agr-sim legged                           # inspection site, stands, then trots
+agr-sim legged gait:=false               # no gait — for the pose examples
 
 agr-stop                                 # stops whichever is running
 agr-build                                # colcon, with the right python
