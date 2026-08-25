@@ -188,6 +188,24 @@ def px4_sitl_process(*, sys_autostart: int, px4_model: str, world: str = 'defaul
         # and which would also let it latch onto a leftover world from a
         # previous run. Setting it skips discovery entirely.
         'PX4_GZ_WORLD': world,
+
+        # ── Arming checks that SITL cannot satisfy ──────────────────────
+        # rcS applies PX4_PARAM_<NAME> AFTER the airframe file, so these
+        # override the airframe's `param set-default`. Both are sim-only:
+        #
+        # NAV_DLL_ACT: airframe 4001 (gz_x500) sets this to 2, which makes a
+        #   GCS datalink MANDATORY for arming — with no QGroundControl
+        #   attached every arm request dies on "Preflight Fail: No connection
+        #   to the GCS". These labs drive the vehicle from ROS 2, not from a
+        #   GCS, so the datalink-loss failsafe is disabled here.
+        # CBRK_SUPPLY_CHK: SITL has no power module, so the redundant-supply
+        #   check reports "system power unavailable" forever. 894281 is PX4's
+        #   magic circuit-breaker value for this check.
+        #
+        # Together these are the difference between a vehicle that arms and
+        # one that refuses to; verified by takeoff to 2.5 m.
+        'PX4_PARAM_NAV_DLL_ACT': '0',
+        'PX4_PARAM_CBRK_SUPPLY_CHK': '894281',
     }
     # gz_env.sh is NOT sourced on the standalone branch, so PX4_GZ_MODELS must
     # be supplied here or the model-spawn URI comes out empty.

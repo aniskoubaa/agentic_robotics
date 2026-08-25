@@ -19,6 +19,7 @@ import sys
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
+from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
 
 # Joint order must match go2_controllers.yaml exactly — the controller takes a
@@ -44,13 +45,40 @@ class Stand(Node):
         self._target = target
         self._steps = max(1, int(seconds * 50.0))
         self._i = 0
-        # Start from the tuck rather than from wherever the sim happens to be:
-        # we cannot read the current position without a state subscription, and
-        # ramping from a known folded pose is safe from any starting condition.
-        self._start = TUCK_POSE
+        # Ramp from where the robot ACTUALLY is. The model now spawns already
+        # in the stand pose (go2_gazebo.xacro seeds each joint via
+        # initial_value), so assuming a folded start would command a fold and
+        # make a standing robot squat and rise again for no reason. Fall back
+        # to the tuck if joint_states has not arrived — ramping from a known
+        # folded pose is still safe from any starting condition.
+        self._start = self._read_joint_positions() or TUCK_POSE
         self.create_timer(0.02, self._tick)
         self.get_logger().info(
             f'ramping to target over {seconds:.1f}s ({self._steps} steps)')
+
+    def _read_joint_positions(self, timeout_s: float = 2.0) -> 'list[float] | None':
+        """Current positions in JOINTS order, or None if no sample arrives.
+
+        joint_state_broadcaster is already up by the time this node starts (the
+        launch file sequences it), so this normally returns on the first spin.
+        """
+        latest: dict = {}
+        sub = self.create_subscription(
+            JointState, '/joint_states',
+            lambda m: latest.update(zip(m.name, m.position)), 10)
+        deadline = self.get_clock().now().nanoseconds + int(timeout_s * 1e9)
+        try:
+            while (rclpy.ok()
+                   and not all(j in latest for j in JOINTS)
+                   and self.get_clock().now().nanoseconds < deadline):
+                rclpy.spin_once(self, timeout_sec=0.05)
+        finally:
+            self.destroy_subscription(sub)
+        if not all(j in latest for j in JOINTS):
+            self.get_logger().warn(
+                'no /joint_states sample — ramping from the tuck pose instead')
+            return None
+        return [float(latest[j]) for j in JOINTS]
 
     def _tick(self) -> None:
         if self._i > self._steps:

@@ -20,10 +20,13 @@ Pedagogy:
   distance, looping at 10 Hz.
 
 Implementation:
-- Pose source:  /odom (spawn-relative) + a fixed spawn offset (SPAWN_*) =
-  WORLD coordinates that match the world-frame WAYPOINTS. /odom always
-  publishes, so this is reliable; in sim the dead-reckoning drift over the
-  short demo distances is negligible.
+- Pose source:  /odom (spawn-relative) + a fixed spawn offset (SPAWN_*),
+  RE-ANCHORED to Gazebo ground truth a few times a second. /odom alone is
+  NOT good enough: the Husky is 4-wheel skid-steer, so every turn-in-place
+  slips and the wheel-derived yaw drifts. Measured: after two waypoint legs
+  the yaw was 84 deg out and the robot reported "arrived at home" while
+  standing 9.8 m away. Odom still supplies the smooth high-rate motion
+  between anchors; ground truth supplies the absolute reference.
 - Obstacle source: /scan (2-D LiDAR) for reactive avoidance.
 - Action sink:  /cmd_vel  (Twist messages, bridged).
 - Concurrency: a MultiThreadedExecutor + ReentrantCallbackGroup so the
@@ -36,6 +39,7 @@ Run:
 """
 
 import math
+import threading
 import time
 
 import rclpy
@@ -47,6 +51,8 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 from std_srvs.srv import Trigger
+
+from agribot_tools import gz_utils
 
 
 # ── Named waypoints (x, y) in the greenhouse_2026 world ────────────────────
@@ -79,6 +85,9 @@ TIMEOUT_S           = 45.0   # give up after this many seconds (safety)
 # spawn args in sim.launch.py (defaults: x=-3, y=1, yaw=0). If you change the
 # spawn there, change them here too. (In sim, odom dead-reckoning is accurate
 # enough over the short demo distances that this is effectively ground truth.)
+ROBOT_MODEL_NAME = 'agribot_robot'   # top-level model name in the world
+GT_POLL_PERIOD_S = 0.2               # ground-truth re-anchor period (~5 Hz)
+
 SPAWN_X   = -6.0
 SPAWN_Y   =  1.5
 SPAWN_YAW =  0.0
@@ -132,6 +141,11 @@ class NavigationServer(Node):
         # Cached WORLD pose (x, y, yaw) of the robot, derived from /odom +
         # the spawn offset. None until the first /odom message arrives.
         self._pose_xy_yaw: 'tuple[float, float, float] | None' = None
+        # Raw odom-derived world pose, and the (odom, truth) pair that
+        # corrects it. See _apply_anchor / _poll_ground_truth.
+        self._odom_xy_yaw: 'tuple[float, float, float] | None' = None
+        self._anchor: 'tuple | None' = None
+        self._stop_gt = threading.Event()
         # Cached most recent LaserScan, for reactive avoidance.
         self._scan: 'LaserScan | None' = None
 
@@ -147,6 +161,11 @@ class NavigationServer(Node):
             callback_group=self.cb_group,
         )
         self._cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+
+        # Ground-truth re-anchoring. Daemon so a killed node never hangs on it.
+        self._gt_thread = threading.Thread(
+            target=self._poll_ground_truth, name='gt_anchor', daemon=True)
+        self._gt_thread.start()
 
         # One Trigger service per named waypoint. Same factory pattern as
         # move_to_pose_server.
@@ -173,7 +192,14 @@ class NavigationServer(Node):
         )
 
     def _on_odom(self, msg: Odometry) -> None:
-        """Convert spawn-relative /odom to a WORLD (x, y, yaw) and cache it."""
+        """Convert spawn-relative /odom to a WORLD (x, y, yaw) and cache it.
+
+        The raw odom estimate is kept in `self._odom_xy_yaw`; the pose the
+        controllers actually read is that estimate pushed through the latest
+        ground-truth anchor (see `_apply_anchor`). With no anchor yet — Gazebo
+        not reachable, model not spawned — this degrades to plain odom, which
+        is what the server used to do unconditionally.
+        """
         p = msg.pose.pose.position
         odom_yaw = yaw_from_quat(msg.pose.pose.orientation)
         # Rotate the odom offset by the spawn yaw, then translate by spawn xy.
@@ -181,7 +207,49 @@ class NavigationServer(Node):
         world_x = SPAWN_X + (p.x * c - p.y * s)
         world_y = SPAWN_Y + (p.x * s + p.y * c)
         world_yaw = wrap_angle(SPAWN_YAW + odom_yaw)
-        self._pose_xy_yaw = (world_x, world_y, world_yaw)
+        self._odom_xy_yaw = (world_x, world_y, world_yaw)
+        self._pose_xy_yaw = self._apply_anchor(self._odom_xy_yaw)
+
+    def _apply_anchor(self, odom_pose: tuple) -> tuple:
+        """Correct an odom-derived world pose with the last ground-truth fix.
+
+        The anchor stores the odom pose and the true pose sampled at the same
+        instant. Everything since then is treated as trustworthy RELATIVE
+        motion: rotate that delta into the true frame and add it on. This is
+        why the robot still moves smoothly at odom rate between anchors
+        instead of teleporting 5x a second.
+        """
+        anchor = self._anchor
+        if anchor is None:
+            return odom_pose
+        ox, oy, oyaw, tx, ty, tyaw = anchor
+        dyaw = wrap_angle(tyaw - oyaw)
+        dx, dy = odom_pose[0] - ox, odom_pose[1] - oy
+        c, s = math.cos(dyaw), math.sin(dyaw)
+        return (tx + (dx * c - dy * s),
+                ty + (dx * s + dy * c),
+                wrap_angle(odom_pose[2] + dyaw))
+
+    def _poll_ground_truth(self) -> None:
+        """Re-anchor to Gazebo ground truth ~5x a second (daemon thread).
+
+        Runs off the executor on purpose: `get_model_world_pose` shells out to
+        `gz topic` and blocks ~100 ms, which would wreck a 10 Hz control loop.
+        Failures are silent and simply leave the previous anchor in place —
+        a missing anchor must degrade to odom, never stall navigation.
+        """
+        while not self._stop_gt.wait(GT_POLL_PERIOD_S):
+            try:
+                pose = gz_utils.get_model_world_pose(ROBOT_MODEL_NAME)
+            except Exception:
+                continue
+            if not pose or self._odom_xy_yaw is None:
+                continue
+            (tx, ty, _), (qx, qy, qz, qw) = pose
+            tyaw = math.atan2(2.0 * (qw * qz + qx * qy),
+                              1.0 - 2.0 * (qy * qy + qz * qz))
+            ox, oy, oyaw = self._odom_xy_yaw
+            self._anchor = (ox, oy, oyaw, tx, ty, tyaw)
 
     def _on_scan(self, msg: LaserScan) -> None:
         """Cache the most recent LaserScan."""
@@ -423,6 +491,7 @@ def main():
     # worse than none, because it also masks the real exit path.
     if rclpy.ok():
         node._cmd_pub.publish(Twist())
+    node._stop_gt.set()          # let the ground-truth thread fall out of its wait
     node.destroy_node()
     rclpy.try_shutdown()   # idempotent: bare shutdown() raises if already down
 

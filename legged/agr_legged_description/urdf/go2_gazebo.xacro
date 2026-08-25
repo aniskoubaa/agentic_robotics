@@ -28,22 +28,35 @@
     <hardware>
       <plugin>gz_ros2_control/GazeboSimSystem</plugin>
     </hardware>
+    <!-- initial_value matters more than it looks. gz_ros2_control seeds the
+         joint at this angle the moment the model spawns, and the robot then
+         rests on its feet for the ~10 s it takes joint_state_broadcaster and
+         the position controller to come up. Without it every joint starts at
+         0 - legs straight down, 0.446 m of stilts - and NOTHING holds them:
+         the Go2 collapses and lands on its back long before the controller
+         can issue a command. Keep these equal to STAND in stand.py.        -->
     <xacro:macro name="leg_ctrl" params="name">
       <joint name="${name}_hip_joint">
         <command_interface name="position"/>
-        <state_interface name="position"/>
+        <state_interface name="position">
+          <param name="initial_value">0.0</param>
+        </state_interface>
         <state_interface name="velocity"/>
         <state_interface name="effort"/>
       </joint>
       <joint name="${name}_thigh_joint">
         <command_interface name="position"/>
-        <state_interface name="position"/>
+        <state_interface name="position">
+          <param name="initial_value">0.80</param>
+        </state_interface>
         <state_interface name="velocity"/>
         <state_interface name="effort"/>
       </joint>
       <joint name="${name}_calf_joint">
         <command_interface name="position"/>
-        <state_interface name="position"/>
+        <state_interface name="position">
+          <param name="initial_value">-1.55</param>
+        </state_interface>
         <state_interface name="velocity"/>
         <state_interface name="effort"/>
       </joint>

@@ -13,7 +13,8 @@ from __future__ import annotations
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
-from px4_msgs.msg import BatteryStatus, VehicleLocalPosition, VehicleStatus
+from px4_msgs.msg import (BatteryStatus, VehicleLocalPosition, VehicleOdometry,
+                         VehicleStatus)
 
 from . import px4_topics
 from .px4_topics import PX4_QOS
@@ -39,6 +40,7 @@ class VehicleMonitor(Node):
         self._ns = ns
         self._status: VehicleStatus | None = None
         self._pos: VehicleLocalPosition | None = None
+        self._odom: VehicleOdometry | None = None
         self._batt: BatteryStatus | None = None
         self._status_t = self._pos_t = self._batt_t = 0.0
 
@@ -46,6 +48,14 @@ class VehicleMonitor(Node):
         self._pending = {
             px4_topics.VEHICLE_STATUS: (VehicleStatus, self._on_status),
             px4_topics.LOCAL_POSITION: (VehicleLocalPosition, self._on_pos),
+            # Fallback position source. On this PX4/uXRCE build
+            # vehicle_local_position is advertised — the DDS writer is created
+            # and `ros2 topic info` shows a publisher — but it never carries a
+            # single sample, so the position field would read "pos —" forever
+            # even in level flight. vehicle_odometry comes from the same
+            # estimator, publishes at ~48 Hz, and is used whenever
+            # local_position stays silent.
+            px4_topics.ODOMETRY: (VehicleOdometry, self._on_odom),
             px4_topics.BATTERY_STATUS: (BatteryStatus, self._on_batt),
         }
         self._warned = False
@@ -84,6 +94,9 @@ class VehicleMonitor(Node):
     def _on_pos(self, msg):
         self._pos, self._pos_t = msg, self._now()
 
+    def _on_odom(self, msg):
+        self._odom = msg
+
     def _on_batt(self, msg):
         self._batt, self._batt_t = msg, self._now()
 
@@ -112,6 +125,9 @@ class VehicleMonitor(Node):
         pos = 'pos —'
         if self._pos is not None and self._pos.xy_valid:
             pos = f'x={self._pos.x:6.1f} y={self._pos.y:6.1f} z={self._pos.z:6.1f}'
+        elif self._odom is not None:
+            x, y, z = self._odom.position
+            pos = f'x={x:6.1f} y={y:6.1f} z={z:6.1f} (odom)'
         batt = 'batt —'
         if self._batt is not None:
             if now - self._batt_t > STALE_AFTER_S:

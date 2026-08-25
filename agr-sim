@@ -167,6 +167,22 @@ if [[ "${XDG_SESSION_TYPE:-}" == "wayland" || -n "${WAYLAND_DISPLAY:-}" ]]; then
   QT_VARS=(QT_QPA_PLATFORM=xcb)
 fi
 
+# ── gz-transport interface pinning ──────────────────────────────────────────
+# gz-transport advertises on the first non-loopback interface it finds. With
+# Docker installed that is a docker0 / br-* bridge (this machine has five), and
+# publisher and subscriber then "connect" over an address that does not carry
+# their traffic. The symptom is maddening: the topic exists, `gz topic -i`
+# shows a publisher AND a subscriber, and no data ever arrives.
+#
+# What it cost: PX4's Gazebo bridge silently lost the barometer, so PX4 refused
+# to arm with "Preflight Fail: barometer 0 missing" — 7 of 9 starts. Pinning to
+# loopback made it 3 of 3. Everything here is one machine, so loopback is right.
+# An explicit GZ_IP is respected, for anyone running Gazebo across hosts.
+GZ_VARS=()
+if [[ -z "${GZ_IP:-}" ]]; then
+  GZ_VARS=(GZ_IP=127.0.0.1)
+fi
+
 strip_paths() { echo "${1:-}" | tr ':' '\n' | grep -vE '/snap/|anaconda|miniconda' | paste -sd:; }
 strip_snap()  { echo "${1:-}" | tr ':' '\n' | grep -v '/snap/'                     | paste -sd:; }
 
@@ -178,6 +194,7 @@ exec env "${unset_args[@]}" \
     XAUTHORITY="${XAUTHORITY:-/run/user/$(id -u)/gdm/Xauthority}" \
     HOME="${RUN_HOME}" USER="${RUN_USER}" \
     AGR_WS="${AGR_WS}" AGR_ROS_DISTRO="${AGR_ROS_DISTRO}" \
+    ${GZ_VARS[@]+"${GZ_VARS[@]}"} \
     LAUNCH_PKG="${LAUNCH_PKG}" LAUNCH_FILE="${LAUNCH_FILE}" \
     "${PRIME_VARS[@]}" "${QT_VARS[@]}" \
   bash -c '

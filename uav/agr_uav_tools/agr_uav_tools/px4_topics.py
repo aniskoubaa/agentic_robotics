@@ -64,6 +64,7 @@ PX4_QOS = QoSProfile(
 VEHICLE_STATUS = 'vehicle_status'
 LOCAL_POSITION = 'vehicle_local_position'
 GLOBAL_POSITION = 'vehicle_global_position'
+ODOMETRY = 'vehicle_odometry'
 BATTERY_STATUS = 'battery_status'
 FAILSAFE_FLAGS = 'failsafe_flags'
 

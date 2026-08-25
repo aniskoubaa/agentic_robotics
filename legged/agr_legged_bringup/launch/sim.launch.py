@@ -112,10 +112,16 @@ def generate_launch_description() -> LaunchDescription:
     return LaunchDescription([
         DeclareLaunchArgument('world', default_value='agr_inspection'),
         DeclareLaunchArgument('headless', default_value='false'),
-        DeclareLaunchArgument('x', default_value='0.0'),
+        # Clear ground between the pipe run and the staircase. NOT (0, 0):
+        # pipe_0/pipe_1 lie along Y at x=0 with radius 0.16, so a robot spawned
+        # at the origin lands straddling a pipe and settles pitched ~29 deg,
+        # never reaching a level stance.
+        DeclareLaunchArgument('x', default_value='1.0'),
         DeclareLaunchArgument('y', default_value='0.0'),
-        DeclareLaunchArgument('z', default_value='0.45',
-                              description='spawn height; must clear the tucked legs'),
+        DeclareLaunchArgument('z', default_value='0.34',
+                              description='spawn height; feet sit 0.324 m below '
+                                          'the trunk in the stand pose, so this '
+                                          'drops the robot ~15 mm onto its feet'),
         DeclareLaunchArgument('pose', default_value='stand'),
         DeclareLaunchArgument('stand', default_value='true'),
         DeclareLaunchArgument('meshes', default_value='auto',

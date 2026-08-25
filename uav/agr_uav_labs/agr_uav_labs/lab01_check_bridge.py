@@ -100,7 +100,10 @@ def main(args=None) -> int:
     if st_topic:
         node.create_subscription(VehicleStatus, st_topic,
                                  lambda m: st.__setitem__('msg', m), PX4_QOS)
-        d2 = node.get_clock().now().nanoseconds + int(3e9)
+        # 8 s, not 3: vehicle_status is published ON CHANGE and the XRCE
+        # agent does not replay the latched sample, so the only way to catch
+        # it on an idle vehicle is to still be listening when something moves.
+        d2 = node.get_clock().now().nanoseconds + int(8e9)
         while rclpy.ok() and st['msg'] is None and node.get_clock().now().nanoseconds < d2:
             rclpy.spin_once(node, timeout_sec=0.2)
     if st['msg'] is not None:
@@ -109,6 +112,22 @@ def main(args=None) -> int:
     else:
         print('4. vehicle_status ............. silent — EXPECTED on an idle '
               'vehicle (published on change only), not a fault')
+
+    # Whether the vehicle would actually accept an arm command. Worth printing
+    # because the usual way to discover this is a silent refusal much later, in
+    # a lab that tries to fly. The common cause in this sim is a lost race
+    # between PX4's Gazebo bridge and the barometer topic: roughly one start in
+    # two comes up with no baro, and PX4 then blocks arming with
+    # "barometer 0 missing". Restarting the sim clears it.
+    if st['msg'] is None:
+        print('5. preflight checks ........... unknown (no vehicle_status sample)')
+    elif st['msg'].pre_flight_checks_pass:
+        print('5. preflight checks ........... pass — vehicle can arm')
+    else:
+        print('5. preflight checks ........... FAIL — vehicle will NOT arm.')
+        print('     Check the PX4 console for the reason. If it says')
+        print('     "barometer 0 missing", that is the known startup race:')
+        print('     run  agr-stop  then  agr-sim  again.')
 
     print('\n   ✓ Bridge is up. On to lab 02.')
     node.destroy_node()
