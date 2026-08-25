@@ -16,15 +16,12 @@ setup(
     zip_safe=True,
     maintainer='Anis Koubaa',
     maintainer_email='anis.koubaa@gmail.com',
-    description='RaiseBot lecture demos.',
+    description='RaiseBot demos and diagnostics.',
     license='MIT',
     entry_points={
         'console_scripts': [
-            # 'd1l1_tools_demo = raisebot_demos.d1l1_tools_demo:main',
-            # 'd1l2_agentic_inspector = raisebot_demos.d1l2_agentic_inspector:main',
-            # 'd2l1_teleop_record = raisebot_demos.d2l1_teleop_record:main',
-            # 'd2l2_vla_rollout = raisebot_demos.d2l2_vla_rollout:main',
-            # 'd3l1_planner_executor = raisebot_demos.d3l1_planner_executor:main',
+            'diagnose         = raisebot_demos.diagnose:main',
+            'demo_greenhouse  = raisebot_demos.demo_greenhouse:main',
         ],
     },
 )

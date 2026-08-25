@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>raisebot_demos</name>
+  <name>raisebot_examples</name>
   <version>0.1.0</version>
-  <description>RaiseBot lecture demos: one node per lecture, ≤80 lines each.</description>
+  <description>RaiseBot elementary examples: one ROS 2 concept per script.</description>
   <maintainer email="anis.koubaa@gmail.com">Anis Koubaa</maintainer>
   <license>MIT</license>
 
@@ -15,10 +15,9 @@
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>std_srvs</exec_depend>
-  <exec_depend>rosgraph_msgs</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>python3-opencv</exec_depend>
   <exec_depend>raisebot_tools</exec_depend>
-  <exec_depend>raisebot_tools</exec_depend>
-  <exec_depend>raisebot_bringup</exec_depend>
 
   <export>
     <build_type>ament_python</build_type>

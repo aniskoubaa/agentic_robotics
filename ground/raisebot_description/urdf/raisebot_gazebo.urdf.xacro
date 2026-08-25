@@ -339,11 +339,27 @@
             name="gz::sim::systems::JointPositionController">
       <joint_name>ptz_pan_joint</joint_name>
       <topic>/ptz/pan/cmd</topic>
-      <p_gain>200</p_gain>
-      <i_gain>5</i_gain>
-      <d_gain>20</d_gain>
-      <cmd_max>30</cmd_max>
-      <cmd_min>-30</cmd_min>
+      <!-- Retuned. The old gains (200/5/20, no i_max) made the PTZ crawl at
+           ~0.1 rad/s: a commanded 0.6 rad pan took six seconds and usually
+           never arrived, so every "aim the camera" script photographed the
+           old view. Two faults, both worth knowing:
+
+           d_gain 20 on a link with inertia 5e-5 kg m^2 is wildly
+           over-damped - the derivative term cancelled almost all of the
+           proportional one. The arm gets away with d_gain 80 because it
+           swings tens of kilograms.
+
+           i_max/i_min were absent. gz-math's PID defaults them to ZERO,
+           which clamps the integral contribution to nothing, so the small
+           steady-state error never got corrected. The arm's plugin sets
+           them; this one did not.                                        -->
+      <p_gain>500</p_gain>
+      <i_gain>10</i_gain>
+      <d_gain>1</d_gain>
+      <i_max>5</i_max>
+      <i_min>-5</i_min>
+      <cmd_max>50</cmd_max>
+      <cmd_min>-50</cmd_min>
       <initial_position>0.0</initial_position>
     </plugin>
   </gazebo>
@@ -352,11 +368,14 @@
             name="gz::sim::systems::JointPositionController">
       <joint_name>ptz_tilt_joint</joint_name>
       <topic>/ptz/tilt/cmd</topic>
-      <p_gain>200</p_gain>
-      <i_gain>5</i_gain>
-      <d_gain>20</d_gain>
-      <cmd_max>30</cmd_max>
-      <cmd_min>-30</cmd_min>
+      <!-- Same retune as the pan stage above; see the comment there. -->
+      <p_gain>500</p_gain>
+      <i_gain>10</i_gain>
+      <d_gain>1</d_gain>
+      <i_max>5</i_max>
+      <i_min>-5</i_min>
+      <cmd_max>50</cmd_max>
+      <cmd_min>-50</cmd_min>
       <!-- Start tilted ~17° down so crops are framed by default -->
       <initial_position>0.3</initial_position>
     </plugin>

@@ -121,7 +121,20 @@ def launch_setup(context, *args, **kwargs):
         output='screen',
     )
 
-    return [gz_sim, rsp, spawn, bridge]
+    actions = [gz_sim, rsp, spawn, bridge]
+
+    # The tool servers are what make the robot callable rather than merely
+    # drivable. Off by default so the plain sim stays lean, but one argument
+    # away, because six terminals is the same as "nobody runs them".
+    if LaunchConfiguration('tools').perform(context).lower() in ('true', '1', 'yes'):
+        actions += [
+            Node(package='raisebot_tools', executable=name, name=name,
+                 output='screen', parameters=[{'use_sim_time': True}])
+            for name in ('navigation_server', 'move_to_pose_server',
+                         'gripper_server', 'detector_server',
+                         'inspector_server', 'grasp_server')
+        ]
+    return actions
 
 
 def generate_launch_description():
@@ -136,6 +149,7 @@ def generate_launch_description():
         DeclareLaunchArgument('y', default_value='1.5',  description='Spawn Y (m); 1.5 = centre of the aisle between rows 1 (y=0) and 2 (y=+3)'),
         DeclareLaunchArgument('yaw', default_value='0.0', description='Spawn yaw (rad); 0 faces +x (east), down the aisle'),
         DeclareLaunchArgument('headless', default_value='false', description='true = server only (no GUI); for dataset recording / CI'),
+        DeclareLaunchArgument('tools', default_value='false', description='start the six raisebot_tools service servers alongside the sim'),
 
         # Resolve model://tomato_plant against raisebot_worlds/share/.../meshes
         AppendEnvironmentVariable(
