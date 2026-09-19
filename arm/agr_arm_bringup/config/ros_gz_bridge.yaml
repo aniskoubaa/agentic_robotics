@@ -1,0 +1,110 @@
+# Author: Prof. Anis Koubaa <anis.koubaa@gmail.com>
+# AGR Arm — ROS 2 <-> Gazebo Harmonic topic bridge.
+# Format: https://github.com/gazebosim/ros_gz/blob/ros2/ros_gz_bridge/README.md
+#
+# Naming convention matches the other three platforms: short, namespaceless
+# ROS topics (/joint_states, /wrist_camera/image_raw). Command topics keep the
+# joint name verbatim — /ur5e_elbow_joint/cmd — because that is exactly the
+# string in the URDF's JointPositionController plugin, and a student who can
+# read the URDF can then guess the topic without being told.
+#
+# NOTE there is no /tf entry here, unlike the ground platform. The arm's base
+# is bolted to the world, so the entire transform tree is a function of
+# /joint_states alone and robot_state_publisher produces all of it. Bridging
+# Gazebo's own /tf on top of that gives you two publishers for the same
+# transforms.
+
+# ── Clock (Gz -> ROS) ─────────────────────────────────────────────────
+- ros_topic_name: clock
+  gz_topic_name: clock
+  ros_type_name: rosgraph_msgs/msg/Clock
+  gz_type_name: gz.msgs.Clock
+  direction: GZ_TO_ROS
+
+# ── Joint states: 6 arm joints + 6 gripper joints ─────────────────────
+- ros_topic_name: joint_states
+  gz_topic_name: /joint_states
+  ros_type_name: sensor_msgs/msg/JointState
+  gz_type_name: gz.msgs.Model
+  direction: GZ_TO_ROS
+
+# ── World-frame poses of every model (debugging aid only) ─────────────
+# The Pose_V -> TFMessage bridge DROPS entity names (child_frame_id arrives
+# empty), so nothing may rely on this topic to identify a model. grasp_server
+# reads `gz topic -e /world/agr_workcell/dynamic_pose/info` directly instead,
+# because the protobuf text output keeps the names. Bridged only as a quick
+# "are things moving at all?" signal.
+- ros_topic_name: /gz_world_poses
+  gz_topic_name: /world/agr_workcell/dynamic_pose/info
+  ros_type_name: tf2_msgs/msg/TFMessage
+  gz_type_name: gz.msgs.Pose_V
+  direction: GZ_TO_ROS
+
+# ── Wrist RGB-D camera (eye-in-hand) ──────────────────────────────────
+- ros_topic_name: wrist_camera/image_raw
+  gz_topic_name: /wrist_camera/image
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+
+- ros_topic_name: wrist_camera/depth/image_raw
+  gz_topic_name: /wrist_camera/depth_image
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+
+- ros_topic_name: wrist_camera/camera_info
+  gz_topic_name: /wrist_camera/camera_info
+  ros_type_name: sensor_msgs/msg/CameraInfo
+  gz_type_name: gz.msgs.CameraInfo
+  direction: GZ_TO_ROS
+
+- ros_topic_name: wrist_camera/points
+  gz_topic_name: /wrist_camera/points
+  ros_type_name: sensor_msgs/msg/PointCloud2
+  gz_type_name: gz.msgs.PointCloudPacked
+  direction: GZ_TO_ROS
+
+# ── Bench overview camera (eye-to-hand) ───────────────────────────────
+- ros_topic_name: bench_camera/image_raw
+  gz_topic_name: /bench_camera/image
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+
+- ros_topic_name: bench_camera/camera_info
+  gz_topic_name: /bench_camera/camera_info
+  ros_type_name: sensor_msgs/msg/CameraInfo
+  gz_type_name: gz.msgs.CameraInfo
+  direction: GZ_TO_ROS
+
+# ── UR5e joint position commands (Float64, radians) ───────────────────
+- {ros_topic_name: /ur5e_shoulder_pan_joint/cmd,  gz_topic_name: /ur5e_shoulder_pan_joint/cmd,
+   ros_type_name: std_msgs/msg/Float64, gz_type_name: gz.msgs.Double, direction: ROS_TO_GZ}
+- {ros_topic_name: /ur5e_shoulder_lift_joint/cmd, gz_topic_name: /ur5e_shoulder_lift_joint/cmd,
+   ros_type_name: std_msgs/msg/Float64, gz_type_name: gz.msgs.Double, direction: ROS_TO_GZ}
+- {ros_topic_name: /ur5e_elbow_joint/cmd,         gz_topic_name: /ur5e_elbow_joint/cmd,
+   ros_type_name: std_msgs/msg/Float64, gz_type_name: gz.msgs.Double, direction: ROS_TO_GZ}
+- {ros_topic_name: /ur5e_wrist_1_joint/cmd,       gz_topic_name: /ur5e_wrist_1_joint/cmd,
+   ros_type_name: std_msgs/msg/Float64, gz_type_name: gz.msgs.Double, direction: ROS_TO_GZ}
+- {ros_topic_name: /ur5e_wrist_2_joint/cmd,       gz_topic_name: /ur5e_wrist_2_joint/cmd,
+   ros_type_name: std_msgs/msg/Float64, gz_type_name: gz.msgs.Double, direction: ROS_TO_GZ}
+- {ros_topic_name: /ur5e_wrist_3_joint/cmd,       gz_topic_name: /ur5e_wrist_3_joint/cmd,
+   ros_type_name: std_msgs/msg/Float64, gz_type_name: gz.msgs.Double, direction: ROS_TO_GZ}
+
+# ── Robotiq 2F-85 joint position commands (Float64, radians) ──────────
+# DART does not implement the URDF mimic constraints, so every finger joint
+# is commanded individually with the correct sign. gripper_server owns that
+# sign table; see agr_arm_tools/gripper_server.py.
+- {ros_topic_name: /gripper_robotiq_85_left_knuckle_joint/cmd,        gz_topic_name: /gripper_robotiq_85_left_knuckle_joint/cmd,
+   ros_type_name: std_msgs/msg/Float64, gz_type_name: gz.msgs.Double, direction: ROS_TO_GZ}
+- {ros_topic_name: /gripper_robotiq_85_right_knuckle_joint/cmd,       gz_topic_name: /gripper_robotiq_85_right_knuckle_joint/cmd,
+   ros_type_name: std_msgs/msg/Float64, gz_type_name: gz.msgs.Double, direction: ROS_TO_GZ}
+- {ros_topic_name: /gripper_robotiq_85_left_inner_knuckle_joint/cmd,  gz_topic_name: /gripper_robotiq_85_left_inner_knuckle_joint/cmd,
+   ros_type_name: std_msgs/msg/Float64, gz_type_name: gz.msgs.Double, direction: ROS_TO_GZ}
+- {ros_topic_name: /gripper_robotiq_85_right_inner_knuckle_joint/cmd, gz_topic_name: /gripper_robotiq_85_right_inner_knuckle_joint/cmd,
+   ros_type_name: std_msgs/msg/Float64, gz_type_name: gz.msgs.Double, direction: ROS_TO_GZ}
+- {ros_topic_name: /gripper_robotiq_85_left_finger_tip_joint/cmd,     gz_topic_name: /gripper_robotiq_85_left_finger_tip_joint/cmd,
+   ros_type_name: std_msgs/msg/Float64, gz_type_name: gz.msgs.Double, direction: ROS_TO_GZ}
+- {ros_topic_name: /gripper_robotiq_85_right_finger_tip_joint/cmd,    gz_topic_name: /gripper_robotiq_85_right_finger_tip_joint/cmd,
+   ros_type_name: std_msgs/msg/Float64, gz_type_name: gz.msgs.Double, direction: ROS_TO_GZ}

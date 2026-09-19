@@ -1,0 +1,291 @@
+<?xml version="1.0"?>
+<!-- Author: Prof. Anis Koubaa <anis.koubaa@gmail.com> -->
+<!--
+  AGR Arm — Gazebo Harmonic sensor + plugin overlay.
+
+  Kept separate from agr_arm_robot.urdf.xacro so the composition file stays a
+  clean kinematic description and all the sim-only plumbing lives here.
+
+  What this adds:
+    1. Wrist RGB-D camera   → /wrist_camera/{image_raw,depth,camera_info,points}
+    2. Bench overview camera → /bench_camera/image_raw
+    3. Joint state publisher → /joint_states   (6 arm + 6 gripper joints)
+    4. One position controller per arm joint  → /ur5e_<joint>/cmd   (Float64)
+    5. Two position controllers for the gripper knuckles
+
+  There is no ros2_control here and that is deliberate. Every commandable
+  thing on this robot is a Float64 on a topic, which means a student can
+  drive the entire arm with `ros2 topic pub` and nothing else — no controller
+  manager, no spawners, no activation ordering to get wrong. The legged
+  platform pays the ros2_control tax because a 12-joint gait needs one
+  synchronised command vector; a teaching arm does not.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 1. Wrist RGB-D camera (eye-in-hand)                              -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <gazebo reference="wrist_camera_link">
+    <sensor name="wrist_camera" type="rgbd_camera">
+      <update_rate>30</update_rate>
+      <topic>wrist_camera</topic>
+      <gz_frame_id>wrist_camera_link</gz_frame_id>
+      <camera>
+        <horizontal_fov>1.211</horizontal_fov>   <!-- 69.4°, D435 spec -->
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <!-- near clip 0.05: the gripper fingers are ~0.15 m from the lens and
+             a grasped block is closer still. At the D435's real 0.1 m the
+             object you are about to pick disappears exactly when it matters. -->
+        <clip><near>0.05</near><far>10.0</far></clip>
+      </camera>
+      <always_on>true</always_on>
+      <visualize>false</visualize>
+    </sensor>
+  </gazebo>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 2. Bench overview camera (eye-to-hand)                           -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <gazebo reference="bench_camera_link">
+    <sensor name="bench_camera" type="camera">
+      <update_rate>15</update_rate>
+      <!-- NOT <topic>bench_camera</topic>. A plain `camera` sensor publishes
+           the image on EXACTLY this string and puts camera_info at the
+           SIBLING path, so `bench_camera` yields /bench_camera and a
+           root-level /camera_info that collides with every other plain
+           camera in the world. Naming the topic `bench_camera/image` gives
+           /bench_camera/image + /bench_camera/camera_info, which is the same
+           layout `rgbd_camera` produces for the wrist and what the bridge
+           config expects. (Verified live: with the bare name the ROS topic
+           existed and never carried a single frame.) -->
+      <topic>bench_camera/image</topic>
+      <gz_frame_id>bench_camera_link</gz_frame_id>
+      <camera>
+        <horizontal_fov>1.30</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip><near>0.10</near><far>20.0</far></clip>
+      </camera>
+      <always_on>true</always_on>
+      <visualize>false</visualize>
+    </sensor>
+  </gazebo>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 3. Joint state publisher                                         -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- There is NO rate limit here, and not for want of trying. gz-sim 8's
+       JointStatePublisher accepts exactly one parameter, <topic>: the
+       library contains no reference to update_rate at all, and an
+       <update_rate> tag is accepted by the SDF parser and then ignored.
+       (Checked against libgz-sim8-joint-state-publisher-system.so.8.11.0,
+       and confirmed live — this topic measures 998 Hz against a world
+       stepping at 1000 Hz.)
+
+       So /joint_states runs at the PHYSICS RATE. Two consequences worth
+       knowing before they surprise you:
+
+         - a spin_once loop reading it will iterate about a thousand times a
+           second, so anything that prints per message must throttle itself.
+         - the arriving rate is a property of the world's <physics> block,
+           not of this plugin. Slow the physics down and the joint states
+           slow down with it.
+
+       Left uncapped deliberately rather than working around it: 14 joints of
+       float at 1 kHz is well within what the bridge handles, and a fake cap
+       that does nothing is worse than no cap. -->
+  <gazebo>
+    <plugin filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher">
+      <topic>joint_states</topic>
+    </plugin>
+  </gazebo>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 4. UR5e joint position controllers                               -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- Gains are PER JOINT, and that is the whole lesson of this block.
+       RaiseBot drives this same arm with one set of gains (1500/50/80) on
+       all six joints. Measured here, that makes the three wrist joints
+       oscillate: wrist_3 sat 0.11 rad off its target with its velocity
+       flipping between +2.5 and -2.5 rad/s forever, never settling.
+
+       The reason is inertia. shoulder_lift swings twenty-odd kilograms of
+       arm; wrist_3 turns a gripper about its own axis, maybe 0.01 kg m^2.
+       Critical damping is 2*sqrt(p*J), so the d_gain that is right for the
+       shoulder (~100) is twenty times critical at the wrist, and an
+       over-damped loop amplifies the derivative of a quantised position
+       signal into exactly the buzz above. Softer p and a much smaller d
+       at the wrist fixes it (measured: 0.11 rad -> under 0.005 rad, and the
+       velocity goes to zero).
+
+       cmd_max is set to each joint's own URDF effort limit — 150 N m for the
+       three big joints, 28 N m for the three wrist joints. Commanding beyond
+       it achieves nothing, because DART clamps to the limit anyway, and it
+       makes the number in this file mean something physical.
+
+       i_max/i_min are set EXPLICITLY on every joint. gz-math's PID defaults
+       them to ZERO, which silently clamps the integral term to nothing and
+       leaves a steady-state droop that no amount of i_gain can fix. That
+       trap cost a day on the ground platform's PTZ camera; it is written
+       down here so nobody rediscovers it on the arm. -->
+  <xacro:macro name="arm_joint_controller"
+               params="joint_name target p i d i_max cmd_max">
+    <gazebo>
+      <plugin filename="gz-sim-joint-position-controller-system"
+              name="gz::sim::systems::JointPositionController">
+        <joint_name>${joint_name}</joint_name>
+        <topic>/${joint_name}/cmd</topic>
+        <p_gain>${p}</p_gain>
+        <i_gain>${i}</i_gain>
+        <d_gain>${d}</d_gain>
+        <i_max>${i_max}</i_max>
+        <i_min>${-i_max}</i_min>
+        <cmd_max>${cmd_max}</cmd_max>
+        <cmd_min>${-cmd_max}</cmd_min>
+        <initial_position>${target}</initial_position>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+
+  <!-- HOME pose: 0, -80, +90, -100, -90, 0 degrees.
+
+       Round numbers on purpose — a student can read them off this file, type
+       them into `ros2 topic pub`, and watch the arm return here, which is
+       the fastest possible way to believe that the six numbers ARE the
+       robot. The shape is the standard UR "elbow up, wrist down" ready pose,
+       and the three middle angles satisfy lift + elbow + wrist_1 = -90 deg,
+       which is exactly the condition for the tool to point straight down.
+       Change one of them and the gripper tilts.
+
+       It puts the grasp point at (0.560, 0.133, 1.048): 0.30 m above the
+       bench, clear of all three blocks and of the drop tray, and out of the
+       bench camera's line of sight to the blocks. -->
+  <!-- i_max is set just under cmd_max, NOT to a small "safe" number, and
+       that is the second measured fix in this block. At i_max=30 the arm
+       held its pose near the home configuration and drooped up to 0.028 rad
+       when reaching down to the bench — 32 mm of tool error, enough to miss
+       a 50 mm block entirely. The reason is simply arithmetic: a UR5e
+       reaching out needs on the order of 80 N m at the shoulder to hold
+       itself up, and with the integral capped at 30 the proportional term
+       has to supply the other 50, which it can only do by SITTING AT AN
+       ERROR of 50/2000 rad. The integral term exists precisely to carry a
+       constant load at zero error, and capping it below that load is asking
+       it not to.
+
+       i_gain comes down as i_max goes up (50 -> 25). The cap was doing
+       double duty as anti-windup; with it raised, the gain has to be the
+       thing that keeps the integral from winding up during a long move. -->
+  <xacro:arm_joint_controller joint_name="ur5e_shoulder_pan_joint"  target=" 0.0"
+                              p="2000" i="1000" d="140" i_max="140" cmd_max="150"/>
+  <xacro:arm_joint_controller joint_name="ur5e_shoulder_lift_joint" target="-1.3963"
+                              p="2000" i="1000" d="140" i_max="140" cmd_max="150"/>
+  <xacro:arm_joint_controller joint_name="ur5e_elbow_joint"         target=" 1.5708"
+                              p="1500" i="1000" d="100" i_max="140" cmd_max="150"/>
+  <xacro:arm_joint_controller joint_name="ur5e_wrist_1_joint"       target="-1.7453"
+                              p="400"  i="400" d="12"  i_max="25"  cmd_max="28"/>
+  <xacro:arm_joint_controller joint_name="ur5e_wrist_2_joint"       target="-1.5708"
+                              p="400"  i="400" d="12"  i_max="25"  cmd_max="28"/>
+  <xacro:arm_joint_controller joint_name="ur5e_wrist_3_joint"       target=" 0.0"
+                              p="300"  i="350" d="7"   i_max="25"  cmd_max="28"/>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 5. Robotiq 2F-85 knuckle controllers                             -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- The two knuckle joints are the gripper's real DOF: revolute, limited
+       to [0..0.8] (left) and [-0.8..0] (right). No integral term — an
+       integral winds up the instant the fingers stall on an object, which is
+       the normal case when gripping, and then throws the fingers open when
+       the object is released.
+
+       cmd_max is 20 N m, not the 5 the ground platform uses, and this is a
+       measured fix rather than a preference. The four mimic'd joints carry
+       joint-level damping (see sim.launch.py), and damping is a torque that
+       grows with speed: at 5 N m of authority the two knuckles could only
+       drag four damped joints at a crawl, and a close that should take under
+       a second took more than ten. Every script that closed the gripper and
+       then checked what it was holding got the answer for a gripper that had
+       not finished moving.
+
+       The pair of numbers only makes sense together — see the damping in
+       sim.launch.py, which came down at the same time this went up. -->
+  <xacro:macro name="gripper_knuckle_controller" params="joint_name target">
+    <gazebo>
+      <plugin filename="gz-sim-joint-position-controller-system"
+              name="gz::sim::systems::JointPositionController">
+        <joint_name>${joint_name}</joint_name>
+        <topic>/${joint_name}/cmd</topic>
+        <p_gain>200</p_gain>
+        <i_gain>0</i_gain>
+        <d_gain>15</d_gain>
+        <cmd_max>20</cmd_max>
+        <cmd_min>-20</cmd_min>
+        <initial_position>${target}</initial_position>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:gripper_knuckle_controller joint_name="gripper_robotiq_85_left_knuckle_joint"  target="0.0"/>
+  <xacro:gripper_knuckle_controller joint_name="gripper_robotiq_85_right_knuckle_joint" target="0.0"/>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 6. Detachable joints — how this robot actually holds anything    -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- Gazebo Harmonic with DART will NOT hold a 50 mm cube between two
+       rubber pads. Measured, not assumed: close the Robotiq on a block and
+       the knuckle sails past the block's width to 0.66 rad while the block
+       squirts out sideways — it ends up 5 cm away and the gripper closes on
+       nothing. No amount of friction tuning fixes that reliably, and a
+       teaching platform that grasps on some machines is worse than one that
+       is honest about the mechanism.
+
+       So a grasp here is a real constraint, not friction and not a fudge.
+       gz-sim's DetachableJoint welds a child model to a parent link on
+       request and breaks the weld on request, which is exactly the physics
+       of "held". While a block is welded the arm carries its full mass and
+       inertia, the fingers still close on it, and letting go still drops it.
+
+       WHY ONE PLUGIN PER BLOCK: DetachableJoint names its child model at
+       load time — it cannot be pointed at an arbitrary object later. So the
+       robot description has to know the names of the graspable things in
+       agr_workcell. That is a genuine coupling between this file and the
+       world file, and it is the price of a grasp that behaves. Add a block
+       to the world, add a line here.
+
+       WHY parent_link IS ur5e_wrist_3_link AND NOT THE GRIPPER BASE:
+       sdformat FOLDS fixed joints. Everything from the flange out — the
+       adapter, gripper_mount_link, the Robotiq's own base — collapses into
+       ur5e_wrist_3_link before the plugin ever sees it, so naming any of
+       those gets "parent_link not found" and a plugin that silently does
+       nothing. `gz model -m agr_arm_robot` prints the links that actually
+       exist; that is the list to name from.
+
+       The plugin attaches on load, so grasp_server detaches everything the
+       moment it starts. Until then the blocks are welded where they sit. -->
+  <xacro:macro name="graspable" params="model link:=link">
+    <gazebo>
+      <plugin filename="gz-sim-detachable-joint-system"
+              name="gz::sim::systems::DetachableJoint">
+        <parent_link>ur5e_wrist_3_link</parent_link>
+        <child_model>${model}</child_model>
+        <child_link>${link}</child_link>
+        <attach_topic>/grasp/${model}/attach</attach_topic>
+        <detach_topic>/grasp/${model}/detach</detach_topic>
+        <output_topic>/grasp/${model}/attached</output_topic>
+        <suppress_child_warning>true</suppress_child_warning>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:graspable model="block_red"/>
+  <xacro:graspable model="block_green"/>
+  <xacro:graspable model="block_blue"/>
+
+</robot>

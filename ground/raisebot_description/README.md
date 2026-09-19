@@ -11,7 +11,7 @@ URDF/xacro for the RaiseBot robot platform: **Husky A200 + UR5e + Robotiq 2F-85 
 
 ## Upstream packages used (installed via rosdep, not vendored)
 
-- `husky_description` (Clearpath)
+- `clearpath_platform_description` (Clearpath A200/Husky)
 - `ur_description` (Universal Robots)
 - `realsense2_description` (Intel RealSense)
 - `robotiq_description` — gripper (verify availability on Jazzy; may need a thin local xacro)

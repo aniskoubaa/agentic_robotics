@@ -1,0 +1,156 @@
+<?xml version="1.0"?>
+<!-- Author: Prof. Anis Koubaa <anis.koubaa@gmail.com> -->
+<!--
+  AGR Arm — full robot composition.
+
+  Bench pedestal + UR5e + Robotiq 2F-85 + RealSense D435 (wrist) + a fixed
+  overview camera on a post.
+
+  Deliberately the SAME arm and the SAME gripper that RaiseBot carries on its
+  Husky (ground/raisebot_description). That is the point: a student who has
+  driven the mobile manipulator meets an identical kinematic chain here with
+  the base bolted down, so everything they learn about joints, poses, IK and
+  grasping transfers in both directions. What changes is only what the base
+  does, and the two cameras below make the other manipulation lesson concrete:
+
+    wrist_camera  — EYE-IN-HAND.  Moves with the tool. Sees whatever the
+                    gripper is about to touch, at close range, and sees
+                    nothing at all when the arm is pointed elsewhere.
+    bench_camera  — EYE-TO-HAND.  Bolted to the workcell. Always shows the
+                    whole table from the same viewpoint, and is regularly
+                    blocked by the arm's own elbow.
+
+  Frames: `world` is the floor under the pedestal. `base_plate` is the top of
+  the pedestal. `ur5e_base_link` sits on the plate, so the arm's own frame is
+  0.76 m above the floor and 0.01 m above the bench plate.
+-->
+<robot name="agr_arm_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Pedestal height. Change it here and everything downstream follows,
+       including the workspace limits agr_arm_tools reports. -->
+  <xacro:property name="pedestal_height" value="0.75"/>
+
+  <!-- ── Bolted-down pedestal ─────────────────────────────────────────── -->
+  <xacro:include filename="$(find agr_arm_description)/urdf/arm_pedestal.urdf.xacro"/>
+  <xacro:arm_pedestal height="${pedestal_height}"/>
+
+  <!-- ── UR5e arm ─────────────────────────────────────────────────────── -->
+  <!-- tf_prefix ur5e_ matches RaiseBot exactly, so /ur5e_elbow_joint/cmd
+       means the same thing on both platforms. -->
+  <xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
+  <xacro:ur_robot
+      name="ur5e"
+      tf_prefix="ur5e_"
+      parent="base_plate"
+      joint_limits_parameters_file="$(find ur_description)/config/ur5e/joint_limits.yaml"
+      kinematics_parameters_file="$(find ur_description)/config/ur5e/default_kinematics.yaml"
+      physical_parameters_file="$(find ur_description)/config/ur5e/physical_parameters.yaml"
+      visual_parameters_file="$(find ur_description)/config/ur5e/visual_parameters.yaml">
+    <origin xyz="0 0 0.005" rpy="0 0 0"/>
+  </xacro:ur_robot>
+
+  <!-- ── UR-to-Robotiq mechanical adapter ─────────────────────────────── -->
+  <!-- Provides gripper_mount_link, hanging off the tool flange. -->
+  <xacro:include filename="$(find robotiq_description)/urdf/ur_to_robotiq_adapter.urdf.xacro"/>
+  <xacro:ur_to_robotiq prefix="" connected_to="ur5e_tool0"/>
+
+  <!-- ── Robotiq 2F-85 gripper ────────────────────────────────────────── -->
+  <!-- include_ros2_control=false: this platform drives every joint through
+       gz JointPositionController plugins (see agr_arm_gazebo.urdf.xacro),
+       not through ros2_control. One command path, no controller_manager. -->
+  <xacro:include filename="$(find robotiq_description)/urdf/robotiq_2f_85_macro.urdf.xacro"/>
+  <xacro:robotiq_gripper
+      name="gripper"
+      prefix="gripper_"
+      parent="gripper_mount_link"
+      sim_ignition="true"
+      include_ros2_control="false">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </xacro:robotiq_gripper>
+
+  <!-- ── Wrist camera (eye-in-hand) ───────────────────────────────────── -->
+  <!-- Mount pose is NOT the one RaiseBot uses, and it took two goes to get
+       right. Both failures are worth recording, because both look correct
+       on paper.
+
+       (1) Copied verbatim from the ground platform — 0.07 m out along the
+       tool's +x, looking straight down the tool axis — the Robotiq's palm
+       fills the right half of every frame. Fine for a scouting sensor on a
+       driving robot; useless when the job is to look at the thing you are
+       about to grasp.
+
+       (2) Moved out to 0.10 m and toed in so the optical axis crossed the
+       tool axis at the grasp point. Better framing, still useless: a block
+       directly under the gripper was completely hidden. The reason is that
+       the Robotiq's fingers open along the tool's +/-x, so a camera offset
+       along +x is looking straight down the line of one finger, and that
+       finger is between the lens and the object every single time.
+
+       (3) What works: offset along the tool's +y instead — PERPENDICULAR to
+       the plane the fingers move in — where the gripper is only about 0.05 m
+       wide, and toed in to aim just past the pads so an object sitting under
+       the gripper lands in the middle of the frame.
+
+           camera at (0, 0.10, -0.03) in tool0, aim point (0, 0, 0.18)
+           look direction = (0, -0.10, 0.21), |.| = 0.233
+           a gz camera looks along its link's +x, and for rpy (0, p, y) that
+           axis is (cos p cos y, cos p sin y, -sin p), so
+               -sin p = 0.903  ->  p = -1.127
+               sin y  = -1.000 ->  y = -pi/2                              -->
+  <xacro:include filename="$(find realsense2_description)/urdf/_d435.urdf.xacro"/>
+  <xacro:sensor_d435
+      name="wrist_camera"
+      parent="ur5e_tool0"
+      use_nominal_extrinsics="true">
+    <origin xyz="0 0.10 -0.03" rpy="0 -1.127 -1.5708"/>
+  </xacro:sensor_d435>
+
+  <!-- ── Overview camera post (eye-to-hand) ───────────────────────────── -->
+  <!-- Off to the robot's right and behind the bench, so it looks diagonally
+       across the table instead of straight down the arm's own shadow. -->
+  <joint name="world_to_camera_post" type="fixed">
+    <parent link="world"/>
+    <child link="bench_post_link"/>
+    <origin xyz="-0.05 -0.55 0.70" rpy="0 0 0"/>
+  </joint>
+
+  <link name="bench_post_link">
+    <visual>
+      <geometry><cylinder radius="0.02" length="1.40"/></geometry>
+      <material name="post_dark"><color rgba="0.20 0.20 0.22 1.0"/></material>
+    </visual>
+    <collision><geometry><cylinder radius="0.02" length="1.40"/></geometry></collision>
+    <inertial>
+      <mass value="1.0"/>
+      <inertia ixx="0.17" ixy="0" ixz="0" iyy="0.17" iyz="0" izz="2e-4"/>
+    </inertial>
+  </link>
+
+  <!-- Camera head at the top of the post (post centre 0.70 + half-length
+       0.70 = 1.40 m above the floor), aimed at the middle of the table at
+       (0.55, 0, 0.78):
+           dx=0.60  dy=0.55  dz=-0.62
+           yaw   = atan2(0.55, 0.60)        =  0.742 rad
+           pitch = atan2(0.62, hypot(dx,dy)) =  0.651 rad  (nose down) -->
+  <joint name="post_to_bench_camera" type="fixed">
+    <parent link="bench_post_link"/>
+    <child link="bench_camera_link"/>
+    <origin xyz="0 0 0.70" rpy="0 0.651 0.742"/>
+  </joint>
+
+  <link name="bench_camera_link">
+    <visual>
+      <geometry><box size="0.06 0.09 0.04"/></geometry>
+      <material name="cam_black"><color rgba="0.08 0.08 0.08 1.0"/></material>
+    </visual>
+    <collision><geometry><box size="0.06 0.09 0.04"/></geometry></collision>
+    <inertial>
+      <mass value="0.15"/>
+      <inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/>
+    </inertial>
+  </link>
+
+  <!-- ── Gazebo sensor + plugin overlay ───────────────────────────────── -->
+  <xacro:include filename="$(find agr_arm_description)/urdf/agr_arm_gazebo.urdf.xacro"/>
+
+</robot>

@@ -40,6 +40,11 @@
 #   agr-sim ground world:=greenhouse_2026_lite.sdf
 #   agr-sim legged                            # LEGGED: Unitree Go2, inspection site
 #   agr-sim legged pose:=crouch
+#   agr-sim arm                               # ARM: bench UR5e + Robotiq in the workcell
+#   agr-sim arm tools:=true                   # ...with the gripper/pose/grasp servers
+#   agr-sim turtlebot                         # TURTLEBOT: official TB3 waffle simulator
+#   agr-sim turtlebot model:=tb4_standard     # ...official TurtleBot 4 (Clearpath) instead
+#   ros2 run agr_tb_tools list_robots         # which TurtleBots are available
 #   agr-stop                                  # tear down whichever is running
 #
 # The platform word is optional and defaults to `uav`, so existing UAV commands
@@ -57,7 +62,11 @@ AGR_WS="${AGR_WS:-${RUN_HOME}/ros2_ws}"
 AGR_ROS_DISTRO="${AGR_ROS_DISTRO:-jazzy}"
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-  sed -n '2,34p' "$SCRIPT_PATH" | sed 's/^#\s\?//'; exit 0
+  # Print the whole leading comment block, however long it grows. Hard-coded
+  # line numbers rot: this help was showing lines 2-34 long after the usage
+  # section had moved past line 40, so `agr-sim --help` silently stopped
+  # mentioning two of the four platforms.
+  sed -n '2,/^$/p' "$SCRIPT_PATH" | sed -n '/^#/p' | sed 's/^#\s\?//'; exit 0
 fi
 
 # ── platform dispatch ───────────────────────────────────────────────────────
@@ -68,10 +77,24 @@ fi
 # platform's packages.
 PLATFORM="uav"
 case "${1:-}" in
-  uav|ground|legged) PLATFORM="$1"; shift ;;
+  uav|ground|legged|arm|turtlebot|tb) PLATFORM="$1"; shift ;;
 esac
 
-if [[ "$PLATFORM" == "legged" ]]; then
+if [[ "$PLATFORM" == "turtlebot" || "$PLATFORM" == "tb" ]]; then
+  # The TurtleBots are the one platform whose simulator we did not write:
+  # agr_tb_bringup includes the official upstream launch file unchanged. What
+  # this wrapper still buys is the environment hygiene below, and it is not
+  # optional here — launched from a snap-polluted shell, TurtleBot 4's Gazebo
+  # GUI dies with a libpthread symbol lookup error and takes the
+  # diffdrive_controller spawner down with it, leaving a simulator with no
+  # /odom and a robot that silently will not move.
+  LAUNCH_PKG="agr_tb_bringup"
+  LAUNCH_FILE="sim.launch.py"
+elif [[ "$PLATFORM" == "arm" ]]; then
+  LAUNCH_PKG="agr_arm_bringup"
+  LAUNCH_FILE="sim.launch.py"
+  [[ "${1:-}" == "--world-only" ]] && { LAUNCH_FILE="world_only.launch.py"; shift; }
+elif [[ "$PLATFORM" == "legged" ]]; then
   LAUNCH_PKG="agr_legged_bringup"
   LAUNCH_FILE="sim.launch.py"
 elif [[ "$PLATFORM" == "ground" ]]; then

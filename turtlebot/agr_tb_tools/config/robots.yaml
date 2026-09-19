@@ -1,0 +1,82 @@
+# Author: Prof. Anis Koubaa <anis.koubaa@gmail.com>
+#
+# The TurtleBots this platform can start, and what each one actually exposes.
+#
+# Every entry points at an OFFICIAL upstream launch file. Nothing here is a
+# robot we built: `launch_package` and `launch_file` are what apt installed,
+# and agr_tb_bringup includes them unchanged. The rest of each entry is the
+# map from "the thing a lesson wants" (drive, scan, camera) to "the topic
+# this particular robot happens to publish it on", so the examples can be
+# written once and run on any of them.
+#
+# All topic names below were READ OFF A RUNNING ROBOT, not from documentation.
+
+tb3_burger:
+  family: turtlebot3
+  model: burger                     # sets TURTLEBOT3_MODEL
+  description: TurtleBot3 Burger — 2 wheels, a lidar, and nothing else.
+  launch_package: turtlebot3_gazebo
+  launch_file: turtlebot3_world.launch.py
+  worlds: [turtlebot3_world, turtlebot3_house]
+  cmd_vel: /cmd_vel
+  cmd_vel_type: TwistStamped
+  odom: /odom
+  scan: /scan
+  imu: /imu
+  camera: null                      # the Burger genuinely has no camera
+  max_speed: 0.22                   # m/s, from the TB3 spec
+  max_turn: 2.84                    # rad/s
+  docked_at_start: false
+
+tb3_waffle:
+  family: turtlebot3
+  model: waffle
+  description: TurtleBot3 Waffle — Burger plus an RGB camera.
+  launch_package: turtlebot3_gazebo
+  launch_file: turtlebot3_world.launch.py
+  worlds: [turtlebot3_world, turtlebot3_house]
+  cmd_vel: /cmd_vel
+  cmd_vel_type: TwistStamped
+  odom: /odom
+  scan: /scan
+  imu: /imu
+  camera: /camera/image_raw
+  max_speed: 0.26
+  max_turn: 1.82
+  docked_at_start: false
+
+tb4_lite:
+  family: turtlebot4
+  model: lite
+  description: TurtleBot4 Lite — a Create 3 base with a lidar and an OAK-D.
+  launch_package: turtlebot4_gz_bringup
+  launch_file: turtlebot4_gz.launch.py
+  worlds: [warehouse, depot, maze]
+  cmd_vel: /cmd_vel
+  cmd_vel_type: TwistStamped
+  odom: /odom
+  scan: /scan
+  imu: null
+  camera: /oakd/rgb/preview/image_raw
+  max_speed: 0.306                  # motion_control's own max_speed parameter
+  max_turn: 1.90
+  # The one that catches everybody: a TB4 spawns ON ITS DOCK and the Create 3
+  # will not drive until it has been undocked. See Base.ensure_ready().
+  docked_at_start: true
+
+tb4_standard:
+  family: turtlebot4
+  model: standard
+  description: TurtleBot4 Standard — the Lite plus a display, more sensors, heavier to render.
+  launch_package: turtlebot4_gz_bringup
+  launch_file: turtlebot4_gz.launch.py
+  worlds: [warehouse, depot, maze]
+  cmd_vel: /cmd_vel
+  cmd_vel_type: TwistStamped
+  odom: /odom
+  scan: /scan
+  imu: null
+  camera: /oakd/rgb/preview/image_raw
+  max_speed: 0.306
+  max_turn: 1.90
+  docked_at_start: true

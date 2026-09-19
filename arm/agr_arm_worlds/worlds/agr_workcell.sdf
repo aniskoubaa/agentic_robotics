@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Robot workcell — a bench, three blocks and a drop tray.
+
+  Deliberately the opposite of the greenhouse and the inspection site: nothing
+  here is more than a metre away, and the robot cannot go and get it. A
+  manipulation world is defined by what falls inside one 850 mm sphere, so the
+  useful thing this world teaches is the WORKSPACE — where the numbers you
+  type in metres actually correspond to a reachable arm configuration.
+
+  All primitives, no meshes, so it loads offline in under a second.
+
+  Layout (metres, world frame, floor at z=0):
+      pedestal     at the origin, arm base flange at z=0.760
+      bench top    x in [0.15, 1.05], y in [-0.40, 0.40], surface z=0.750
+      blocks       x=0.45, y = +0.18 / 0.00 / -0.18, resting at z=0.776
+      drop tray    centred (0.66, 0.30), 0.20 x 0.20, 0.03 walls
+  Everything the arm is asked to pick sits 0.44-0.50 m from the base, which
+  keeps it clear of both the singular column overhead and the 0.85 m edge.
+-->
+<sdf version="1.9">
+  <world name="agr_workcell">
+    <!-- Naming ANY plugin replaces gz sim's whole default set rather than
+         adding to it, so every system the world needs must be listed. Miss
+         Sensors and the URDF's cameras advertise nothing at all - no error,
+         just topics that never appear. -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <!-- 1 ms steps. A 5 cm block between two gripper pads is a small, stiff
+         contact; at the 2 ms the legged world uses it jitters visibly. -->
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+    <gravity>0 0 -9.8</gravity>
+    <scene>
+      <grid>false</grid><shadows>true</shadows>
+      <ambient>0.55 0.55 0.55 1</ambient><background>0.70 0.73 0.78 1</background>
+    </scene>
+
+    <model name="ground_plane"><static>true</static><link name="link">
+      <collision name="c"><geometry><plane><normal>0 0 1</normal><size>1 1</size></plane></geometry>
+        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface></collision>
+      <visual name="v"><geometry><plane><normal>0 0 1</normal><size>40 40</size></plane></geometry>
+        <material><ambient>0.42 0.43 0.45 1</ambient><diffuse>0.42 0.43 0.45 1</diffuse></material></visual>
+    </link></model>
+
+    <light name="sunUTC" type="directional">
+      <pose>0 0 12 0 0 0</pose><cast_shadows>true</cast_shadows><intensity>1</intensity>
+      <direction>-0.4 0.5 -0.85</direction>
+      <diffuse>0.95 0.95 0.92 1</diffuse><specular>0.25 0.25 0.25 1</specular>
+      <attenuation><range>100</range><linear>0</linear><constant>1</constant><quadratic>0</quadratic></attenuation>
+      <spot><inner_angle>0</inner_angle><outer_angle>0</outer_angle><falloff>0</falloff></spot>
+    </light>
+    <!-- Fill light from the front-left so the wrist camera is not shooting
+         into its own shadow when the arm leans over a block. -->
+    <light name="fill" type="point">
+      <pose>0.6 -1.2 2.0 0 0 0</pose><cast_shadows>false</cast_shadows><intensity>0.6</intensity>
+      <diffuse>0.8 0.8 0.85 1</diffuse><specular>0.1 0.1 0.1 1</specular>
+      <attenuation><range>12</range><linear>0.1</linear><constant>0.4</constant><quadratic>0.01</quadratic></attenuation>
+    </light>
+
+    <!-- ── Work bench ─────────────────────────────────────────────────── -->
+    <model name="bench">
+      <static>true</static>
+      <pose>0.60 0 0 0 0 0</pose>
+      <link name="top">
+        <pose>0 0 0.7350 0 0 0</pose>
+        <collision name="c"><geometry><box><size>0.90 0.80 0.03</size></box></geometry>
+          <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface></collision>
+        <visual name="v"><geometry><box><size>0.90 0.80 0.03</size></box></geometry>
+          <material><ambient>0.62 0.55 0.44 1</ambient><diffuse>0.72 0.63 0.50 1</diffuse></material></visual>
+      </link>
+      <link name="leg_0">
+        <pose>0.220 0.350 0.3600 0 0 0</pose>
+        <collision name="c"><geometry><box><size>0.05 0.05 0.72</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.05 0.05 0.72</size></box></geometry>
+          <material><ambient>0.28 0.28 0.30 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse></material></visual>
+      </link>
+      <link name="leg_1">
+        <pose>0.220 -0.350 0.3600 0 0 0</pose>
+        <collision name="c"><geometry><box><size>0.05 0.05 0.72</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.05 0.05 0.72</size></box></geometry>
+          <material><ambient>0.28 0.28 0.30 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse></material></visual>
+      </link>
+      <link name="leg_2">
+        <pose>0.980 0.350 0.3600 0 0 0</pose>
+        <collision name="c"><geometry><box><size>0.05 0.05 0.72</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.05 0.05 0.72</size></box></geometry>
+          <material><ambient>0.28 0.28 0.30 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse></material></visual>
+      </link>
+      <link name="leg_3">
+        <pose>0.980 -0.350 0.3600 0 0 0</pose>
+        <collision name="c"><geometry><box><size>0.05 0.05 0.72</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.05 0.05 0.72</size></box></geometry>
+          <material><ambient>0.28 0.28 0.30 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <!-- ── Drop tray: where picked blocks are placed ──────────────────── -->
+    <model name="drop_tray">
+      <static>true</static>
+      <pose>0.66 0.30 0.7500 0 0 0</pose>
+      <link name="link">
+        <visual name="floor"><pose>0 0 0.005 0 0 0</pose>
+          <geometry><box><size>0.20 0.20 0.01</size></box></geometry>
+          <material><ambient>0.15 0.16 0.18 1</ambient><diffuse>0.20 0.21 0.24 1</diffuse></material></visual>
+        <collision name="floor"><pose>0 0 0.005 0 0 0</pose>
+          <geometry><box><size>0.20 0.20 0.01</size></box></geometry></collision>
+        <visual name="w0"><pose> 0.095 0 0.020 0 0 0</pose>
+          <geometry><box><size>0.01 0.20 0.03</size></box></geometry>
+          <material><ambient>0.15 0.16 0.18 1</ambient><diffuse>0.20 0.21 0.24 1</diffuse></material></visual>
+        <collision name="w0"><pose> 0.095 0 0.020 0 0 0</pose>
+          <geometry><box><size>0.01 0.20 0.03</size></box></geometry></collision>
+        <visual name="w1"><pose>-0.095 0 0.020 0 0 0</pose>
+          <geometry><box><size>0.01 0.20 0.03</size></box></geometry>
+          <material><ambient>0.15 0.16 0.18 1</ambient><diffuse>0.20 0.21 0.24 1</diffuse></material></visual>
+        <collision name="w1"><pose>-0.095 0 0.020 0 0 0</pose>
+          <geometry><box><size>0.01 0.20 0.03</size></box></geometry></collision>
+        <visual name="w2"><pose>0  0.095 0.020 0 0 0</pose>
+          <geometry><box><size>0.20 0.01 0.03</size></box></geometry>
+          <material><ambient>0.15 0.16 0.18 1</ambient><diffuse>0.20 0.21 0.24 1</diffuse></material></visual>
+        <collision name="w2"><pose>0  0.095 0.020 0 0 0</pose>
+          <geometry><box><size>0.20 0.01 0.03</size></box></geometry></collision>
+        <visual name="w3"><pose>0 -0.095 0.020 0 0 0</pose>
+          <geometry><box><size>0.20 0.01 0.03</size></box></geometry>
+          <material><ambient>0.15 0.16 0.18 1</ambient><diffuse>0.20 0.21 0.24 1</diffuse></material></visual>
+        <collision name="w3"><pose>0 -0.095 0.020 0 0 0</pose>
+          <geometry><box><size>0.20 0.01 0.03</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- ── Three graspable blocks ─────────────────────────────────────── -->
+    <!-- 5 cm cubes: the Robotiq 2F-85 has an 85 mm stroke, so a 50 mm cube
+         leaves 17 mm of clearance per pad. Top-level models on purpose -
+         grasp_server teleports them by model name, and only top-level
+         entities are reported in the world frame. -->
+    <model name="block_red">
+      <pose>0.450 0.180 0.7760 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.08</mass>
+          <inertia><ixx>3.3e-5</ixx><ixy>0</ixy><ixz>0</ixz><iyy>3.3e-5</iyy><iyz>0</iyz><izz>3.3e-5</izz></inertia>
+        </inertial>
+        <collision name="c">
+          <geometry><box><size>0.05 0.05 0.05</size></box></geometry>
+          <surface><friction><ode><mu>1.2</mu><mu2>1.2</mu2></ode></friction></surface>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>0.05 0.05 0.05</size></box></geometry>
+          <material><ambient>0.75 0.12 0.10 1</ambient><diffuse>0.75 0.12 0.10 1</diffuse><specular>0.2 0.2 0.2 1</specular></material>
+        </visual>
+      </link>
+    </model>
+    <model name="block_green">
+      <pose>0.450 0.000 0.7760 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.08</mass>
+          <inertia><ixx>3.3e-5</ixx><ixy>0</ixy><ixz>0</ixz><iyy>3.3e-5</iyy><iyz>0</iyz><izz>3.3e-5</izz></inertia>
+        </inertial>
+        <collision name="c">
+          <geometry><box><size>0.05 0.05 0.05</size></box></geometry>
+          <surface><friction><ode><mu>1.2</mu><mu2>1.2</mu2></ode></friction></surface>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>0.05 0.05 0.05</size></box></geometry>
+          <material><ambient>0.15 0.55 0.20 1</ambient><diffuse>0.15 0.55 0.20 1</diffuse><specular>0.2 0.2 0.2 1</specular></material>
+        </visual>
+      </link>
+    </model>
+    <model name="block_blue">
+      <pose>0.450 -0.180 0.7760 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.08</mass>
+          <inertia><ixx>3.3e-5</ixx><ixy>0</ixy><ixz>0</ixz><iyy>3.3e-5</iyy><iyz>0</iyz><izz>3.3e-5</izz></inertia>
+        </inertial>
+        <collision name="c">
+          <geometry><box><size>0.05 0.05 0.05</size></box></geometry>
+          <surface><friction><ode><mu>1.2</mu><mu2>1.2</mu2></ode></friction></surface>
+        </collision>
+        <visual name="v">
+          <geometry><box><size>0.05 0.05 0.05</size></box></geometry>
+          <material><ambient>0.12 0.25 0.70 1</ambient><diffuse>0.12 0.25 0.70 1</diffuse><specular>0.2 0.2 0.2 1</specular></material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

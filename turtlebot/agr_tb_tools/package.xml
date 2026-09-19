@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>agr_tb_tools</name>
+  <version>0.1.0</version>
+  <description>Registry and motion helper for the official TurtleBot 3 and TurtleBot 4 simulators.</description>
+  <maintainer email="anis.koubaa@gmail.com">Anis Koubaa</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+
+  <!-- The official simulators. Not vendored, not wrapped — launched as-is.
+       turtlebot4_simulator also pulls the whole irobot_create_* stack. -->
+  <exec_depend>turtlebot3_gazebo</exec_depend>
+  <exec_depend>turtlebot4_gz_bringup</exec_depend>
+  <exec_depend>irobot_create_msgs</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

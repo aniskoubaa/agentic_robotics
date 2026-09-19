@@ -120,9 +120,43 @@ alias agr_crouch='ros2 run agr_legged_examples 04_change_pose --ros-args -p pose
 alias agr_tuck='ros2 run agr_legged_examples 04_change_pose --ros-args -p pose:=tuck'
 alias agr_legged_joints='ros2 run agr_legged_examples 01_read_joints'
 
+# ── arm platform (bench UR5e + Robotiq 2F-85) ──────────────────────────────
+# tools:=true starts gripper_server, move_to_pose_server and grasp_server.
+# Without grasp_server the gripper closes on nothing and every pick silently
+# fails, which is the arm's version of the ground platform's hanging service.
+alias agr_arm='agr-sim arm tools:=true'
+alias agr_arm_bare='agr-sim arm'
+alias agr_jog='ros2 run agr_arm_teleop teleop_keyboard'
+alias agr_arm_cam='ros2 run agr_arm_teleop camera_view --ros-args -p camera:=both'
+alias agr_arm_check='ros2 run agr_arm_demos diagnose'
+alias agr_arm_demo='ros2 run agr_arm_demos demo_pick_and_place'
+alias agr_arm_space='ros2 run agr_arm_tools workspace'
+alias agr_arm_joints='ros2 run agr_arm_examples 01_read_joints'
+alias agr_pick='ros2 run agr_arm_examples 06_pick_and_place'
+alias agr_arm_reset='ros2 topic pub --once /grasp/reset std_msgs/msg/String "{data: \"\"}"'
+alias agr_arm_topics='ros2 topic list | grep -E "joint_states|camera|cmd$|grasp"'
+
+# ── turtlebot platform (OFFICIAL TurtleBot 3 / TurtleBot 4 simulators) ──────
+# Unlike the other four platforms, we did not write this simulator: agr-sim
+# starts the upstream launch file unchanged. What the wrapper adds is the
+# environment hygiene (without it TurtleBot 4's GUI dies on a snap libpthread
+# symbol and takes the diffdrive_controller with it) and TURTLEBOT3_MODEL,
+# which TB3's own launch files read with no default.
+alias agr_tb='agr-sim turtlebot'
+alias agr_tb3='agr-sim turtlebot model:=tb3_waffle'
+alias agr_tb4='agr-sim turtlebot model:=tb4_lite'
+alias agr_tb_robots='ros2 run agr_tb_tools list_robots'
+alias agr_tb_drive='ros2 run agr_tb_teleop teleop_keyboard'
+alias agr_tb_cam='ros2 run agr_tb_teleop camera_view'
+alias agr_tb_check='ros2 run agr_tb_demos diagnose'
+alias agr_tb_demo='ros2 run agr_tb_demos demo_tour'
+alias agr_tb_square='ros2 run agr_tb_examples 05_drive_a_square'
+alias agr_tb_wander='ros2 run agr_tb_examples 06_avoid_obstacle'
+alias agr_tb_topics='ros2 topic list | grep -E "cmd_vel|odom|scan|camera|oakd|dock"'
+
 agr_help() {
   cat <<'HELP'
-Agentic Robotics — three platforms, the same three layers on each.
+Agentic Robotics — five platforms, the same three layers on each.
 
   Every platform has:  teleop (drive it) · examples (learn it) · demos (show
   it / diagnose it).  When something is wrong, run the diagnose first.
@@ -136,6 +170,10 @@ Agentic Robotics — three platforms, the same three layers on each.
     agr_ground                         RaiseBot Husky + greenhouse + tools
     agr_ground_lite                    ...lighter world (CPU-only machines)
     agr_legged                         Unitree Go2 on the inspection site
+    agr_arm                            bench UR5e + Robotiq + workcell + tools
+    agr_arm_bare                       ...without the tool servers
+    agr_tb3 / agr_tb4                  OFFICIAL TurtleBot 3 / TurtleBot 4 sim
+    agr_tb_robots                      which TurtleBots are available
     agr-stop                           stop whichever is running
     add headless:=true to any of them for no GUI
 
@@ -143,27 +181,48 @@ Agentic Robotics — three platforms, the same three layers on each.
     agr_check                          UAV    — 9 checks
     agr_ground_check                   ground — 10 checks
     agr_legged_check                   legged — 9 checks
+    agr_arm_check                      arm    — 11 checks (12 with active:=true)
+    agr_tb_check                       turtlebot — 6 (TB3) or 9 (TB4) checks
     ros2 run agr_uav_demos diagnose --ros-args -p active:=true   (really arms it)
 
   DRIVE IT BY HAND
     agr_fly                            UAV keyboard flight (t=takeoff, l=land)
     agr_drive                          Husky keyboard
     agr_walk                           Go2 keyboard (q/e strafe — no wheels can)
-    agr_uav_cam / agr_cam / agr_legged_cam        live camera window
+    agr_jog                            arm keyboard (TAB = joint space vs tool space)
+    agr_tb_drive                       TurtleBot keyboard (u/p undock/dock on TB4)
+    agr_uav_cam / agr_cam / agr_legged_cam / agr_arm_cam   live camera window
 
   SHOW IT OFF
     agr_uav_demo                       arm, climb, orbit, land
     agr_ground_demo                    narrated greenhouse inspection
     agr_legged_demo                    walk, strafe, turn on the spot
+    agr_arm_demo                       clear three blocks into the tray
+    agr_tb_demo                        narrated TurtleBot tour
 
   LEARN IT — six scripts per platform, one idea each
     ros2 run agr_uav_examples 01_read_telemetry     ... 06_list_airframes
     ros2 run raisebot_examples 01_drive             ... 06_navigate
     ros2 run agr_legged_examples 01_read_joints     ... 06_walk_a_square
+    ros2 run agr_arm_examples 01_read_joints        ... 06_pick_and_place
+    ros2 run agr_tb_examples 01_read_odometry       ... 06_avoid_obstacle
     (tab-completion after the package name lists all six)
 
   POSES (legged)   agr_stand / agr_crouch / agr_tuck
                    needs the gait stopped:  agr-sim legged gait:=false
+
+  TURTLEBOT        agr_tb_robots                the four robots on offer
+                   agr_tb_square                open loop drifts — by how much
+                   agr_tb_wander                sense, decide, act, no map
+                   TB4 spawns DOCKED; press u in teleop, or the examples
+                   call ensure_ready() for you (takes about 30 s)
+
+  ARM              agr_arm_space                where it can and cannot reach
+                   agr_pick                     one narrated pick and place
+                   agr_arm_reset                blocks back on their marks
+                   agr_arm_joints / agr_arm_topics
+                   named poses are services:
+                     ros2 service call /move_to_ready std_srvs/srv/Trigger
 
   BUILD            agr-build                    colcon with the right python
                    agr-build --packages-select agr_uav_tools
