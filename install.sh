@@ -13,11 +13,13 @@ for arg in "$@"; do
     -h|--help)
       cat <<'HELP'
 Usage: ./install.sh [--no-shell] [--check]
-Install ROS 2 Jazzy, Gazebo Harmonic, all five robot platforms, CPU PyTorch,
-YOLO/OpenAI, LeRobot/SmolVLA, PX4 SITL and Micro XRCE-DDS Agent; build and check.
+Install ROS 2 Jazzy, Gazebo Harmonic, all five robot platforms, PyTorch
+(CUDA build on a supported NVIDIA GPU, otherwise CPU), YOLO/OpenAI,
+LeRobot/SmolVLA, PX4 SITL and Micro XRCE-DDS Agent; build and check.
 Requires Ubuntu 24.04 amd64, internet and sudo. Run as your normal user.
 --no-shell  Do not add the workspace hook to ~/.bashrc.
 --check     Check the existing installation without installing anything.
+AGR_TORCH_BUILD=cpu|cu126|cu128 overrides the automatic PyTorch build choice.
 Existing PX4/message checkouts must match the pinned revisions; never reset.
 HELP
       exit 0 ;;
@@ -111,10 +113,34 @@ clone_pinned https://github.com/PX4/PX4-Autopilot.git "$PX4_DIR" "$PX4_REF"
 clone_pinned https://github.com/PX4/px4_msgs.git "${AGR_WS}/src/px4_msgs" "$MSGS_REF"
 clone_pinned https://github.com/eProsima/Micro-XRCE-DDS-Agent.git "$AGENT_DIR" v3.0.0
 git -C "$PX4_DIR" submodule update --init --recursive
+# PyTorch build: cu128 covers compute capability 7.0-12.0 (Volta to Blackwell)
+# and needs a driver for CUDA 12.8+; cu126 covers 5.0-9.0 (Maxwell to Hopper)
+# and needs CUDA 12.6+. Anything else, or no NVIDIA driver, gets the CPU build.
+pick_torch_build() {
+  local smi cuda cc
+  smi=$(nvidia-smi 2>/dev/null) || { echo cpu; return; }
+  cuda=$(grep -oP 'CUDA Version: \K[0-9]+\.[0-9]+' <<<"$smi" | awk -F. '{print $1 * 100 + $2}')
+  cc=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null \
+    | awk -F. 'NF == 2 {print $1 * 10 + $2}' | sort -n | head -1)
+  if [[ -z "$cuda" || -z "$cc" ]]; then echo cpu
+  elif (( cc >= 70 && cc <= 120 && cuda >= 1208 )); then echo cu128
+  elif (( cc >= 50 && cc <= 90 && cuda >= 1206 )); then echo cu126
+  else echo cpu
+  fi
+}
+TORCH_BUILD="${AGR_TORCH_BUILD:-$(pick_torch_build)}"
+case "$TORCH_BUILD" in
+  cpu|cu126|cu128) ;;
+  *) echo "AGR_TORCH_BUILD must be cpu, cu126 or cu128, not '${TORCH_BUILD}'." >&2; exit 1 ;;
+esac
+echo "PyTorch build: ${TORCH_BUILD}"
+TORCH_INDEX="https://download.pytorch.org/whl/${TORCH_BUILD}"
+# The +build suffix makes a rerun replace a different build that is already installed.
+TORCH_PKGS=("torch==2.10.0+${TORCH_BUILD}" "torchvision==0.25.0+${TORCH_BUILD}")
 # User-site libraries are visible to ROS entrypoints using /usr/bin/python3.
 # Keep NumPy 1 and compatible OpenCV together for the apt cv_bridge ABI.
 PIP=(/usr/bin/python3 -m pip install --user --break-system-packages --retries 5 --timeout 120)
-"${PIP[@]}" 'torch==2.10.0' 'torchvision==0.25.0' --index-url https://download.pytorch.org/whl/cpu
+"${PIP[@]}" "${TORCH_PKGS[@]}" --index-url "$TORCH_INDEX"
 "${PIP[@]}" -r "${AGR_SRC}/scripts/requirements-ai.txt"
 # PX4 requires empy 3; isolate it from Jazzy's empy 4 build tooling.
 PX4_VENV="${HOME}/raise_venvs/px4"
@@ -124,9 +150,9 @@ VENV="${HOME}/raise_venvs/lerobot"
 /usr/bin/python3 -m venv --system-site-packages "$VENV"
 "${VENV}/bin/python3" -m pip install --upgrade pip
 "${VENV}/bin/python3" -m pip install --retries 5 --timeout 120 \
-  'torch==2.10.0' 'torchvision==0.25.0' 'torchcodec==0.10.0' \
-  --index-url https://download.pytorch.org/whl/cpu
-"${VENV}/bin/python3" -m pip install --retries 5 --timeout 120 'lerobot[smolvla]==0.5.1' fastapi uvicorn
+  "${TORCH_PKGS[@]}" 'torchcodec==0.10.0' --index-url "$TORCH_INDEX"
+"${VENV}/bin/python3" -m pip install --retries 5 --timeout 120 \
+  'lerobot[smolvla]==0.5.1' 'scipy>=1.14,<1.17' fastapi uvicorn
 # Cache the VLM backbone used by the Day-2 exercises. If Hugging Face is
 # temporarily unavailable, the first model run will retry the same download.
 BACKBONE_DIR="${HOME}/.cache/huggingface/hub/models--HuggingFaceTB--SmolVLM2-500M-Video-Instruct"

@@ -54,6 +54,23 @@ CMD_LAND = VehicleCommand.VEHICLE_CMD_NAV_LAND                     # 21
 PX4_CUSTOM_MAIN_MODE_OFFBOARD = 6.0     # param2 of DO_SET_MODE
 
 SETPOINT_HZ = 20.0        # comfortably above PX4's ~2 Hz minimum
+
+
+def system_id_for(namespace: str) -> int:
+    """MAVLink system id of the PX4 instance behind a namespace.
+
+    PX4's rcS sets MAV_SYS_ID = instance + 1, and the commander ignores a
+    vehicle_command whose target_system is not its own. Instance 0 (no
+    namespace) is system 1; instance N (namespace px4_N) is system N + 1.
+    """
+    ns = namespace.strip('/')
+    if not ns:
+        return 1
+    try:
+        return int(ns.rsplit('_', 1)[1]) + 1
+    except (IndexError, ValueError):
+        raise ValueError(f'cannot derive a MAVLink system id from namespace {namespace!r}; '
+                         'pass system_id explicitly') from None
 MODE_WARMUP_S = 1.0       # how long to stream setpoints before asking for mode
 
 
@@ -64,9 +81,13 @@ class Pilot:
     and still use this — which is what the examples do.
     """
 
-    def __init__(self, node: Node, namespace: str = '') -> None:
+    def __init__(self, node: Node, namespace: str = '',
+                 system_id: int | None = None) -> None:
         self.node = node
         self.ns = namespace
+        # Commands must name THIS vehicle: with several PX4 instances, a
+        # command for system 1 is ignored by every instance but the first.
+        self.system_id = system_id if system_id is not None else system_id_for(namespace)
         pre = px4_topics.prefix(namespace)
         qos = px4_topics.PX4_QOS
 
@@ -80,6 +101,7 @@ class Pilot:
         self.status: VehicleStatus | None = None
         self.control_mode: VehicleControlMode | None = None
         self.odom: VehicleOdometry | None = None
+        self._odom_rx: float | None = None
 
         # vehicle_status carries a version suffix that changes between PX4
         # releases; resolve it rather than hard-coding. It may not be
@@ -114,6 +136,7 @@ class Pilot:
 
     def _on_odom(self, msg: VehicleOdometry) -> None:
         self.odom = msg
+        self._odom_rx = time.monotonic()
 
     def _stamp(self) -> int:
         """PX4 timestamps are microseconds since boot. PX4 only checks that
@@ -156,6 +179,13 @@ class Pilot:
         n, e, d = self.odom.position
         return (float(n), float(e), -float(d))
 
+    def odom_age(self) -> float | None:
+        """Seconds since the last odometry message, or None if none yet.
+        Odometry streams at ~50 Hz, so a growing age means PX4 is gone."""
+        if self._odom_rx is None:
+            return None
+        return time.monotonic() - self._odom_rx
+
     def yaw(self) -> float:
         """Heading in radians. PX4 odometry gives (w, x, y, z), not (x,y,z,w)
         — a field-order trap that silently returns a plausible wrong angle."""
@@ -186,7 +216,7 @@ class Pilot:
         msg.command = command
         for i in range(1, 8):
             setattr(msg, f'param{i}', float(params.get(f'param{i}', 0.0)))
-        msg.target_system = 1
+        msg.target_system = self.system_id
         msg.target_component = 1
         msg.source_system = 1
         msg.source_component = 1
@@ -195,9 +225,16 @@ class Pilot:
 
     def send_setpoint(self, x: float, y: float, up: float,
                       yaw: float = 0.0, velocity: tuple | None = None,
-                      yawspeed: float | None = None) -> None:
+                      yawspeed: float | None = None,
+                      feedforward: tuple | None = None) -> None:
         """One position (or velocity) setpoint. `up` is metres UP; the NED
-        conversion happens here so no caller has to remember it."""
+        conversion happens here so no caller has to remember it.
+
+        `feedforward` = (vn, ve, vup) adds a velocity feed-forward to a
+        POSITION setpoint: PX4 tracks the position and uses the velocity as
+        the expected motion, which is what smooth tracking of a moving
+        target needs. `velocity` instead switches to pure velocity control.
+        """
         mode = OffboardControlMode()
         mode.timestamp = self._stamp()
         mode.position = velocity is None
@@ -209,7 +246,11 @@ class Pilot:
         nan = float('nan')
         if velocity is None:
             sp.position = [float(x), float(y), float(-up)]
-            sp.velocity = [nan, nan, nan]
+            if feedforward is None:
+                sp.velocity = [nan, nan, nan]
+            else:
+                fn, fe, fup = feedforward
+                sp.velocity = [float(fn), float(fe), float(-fup)]
         else:
             # Unused fields must be NaN, not 0.0. A zero position setpoint is
             # a valid instruction to fly to the origin, and PX4 will obey it.
