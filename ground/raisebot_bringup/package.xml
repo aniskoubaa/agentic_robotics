@@ -7,8 +7,6 @@
   <maintainer email="anis.koubaa@gmail.com">Anis Koubaa</maintainer>
   <license>MIT</license>
 
-  <buildtool_depend>ament_python</buildtool_depend>
-
   <exec_depend>raisebot_tools</exec_depend>
 
   <exec_depend>ros_gz_sim</exec_depend>

@@ -7,8 +7,6 @@
   <maintainer email="anis.koubaa@gmail.com">Anis Koubaa</maintainer>
   <license>MIT</license>
 
-  <buildtool_depend>ament_python</buildtool_depend>
-
   <!-- Runtime deps for the starter scripts students will run -->
   <exec_depend>rclpy</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
