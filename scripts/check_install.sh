@@ -30,7 +30,7 @@ bridge = CvBridge()
 a = np.zeros((4, 4, 3), dtype=np.uint8)
 assert np.array_equal(a, bridge.imgmsg_to_cv2(bridge.cv2_to_imgmsg(a, 'bgr8'), 'bgr8'))
 assert (torch.ones(2) + 1).tolist() == [2, 2]
-print('PyTorch:', torch.__version__)
+print('PyTorch:', torch.__version__, 'CUDA available:', torch.cuda.is_available())
 PY
 check 'LeRobot dataset and SmolVLA imports' "${HOME}/raise_venvs/lerobot/bin/python3" - <<'PY'
 from lerobot.datasets.lerobot_dataset import LeRobotDataset

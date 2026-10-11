@@ -150,7 +150,7 @@ Use terminal tab completion after a package name to see its available programs.
 
 The automatic installer includes:
 
-- CPU PyTorch and torchvision
+- PyTorch and torchvision: the CUDA build on a supported NVIDIA GPU, otherwise the CPU build
 - Ultralytics YOLO
 - OpenAI Python library
 - LeRobot and SmolVLA
@@ -161,8 +161,13 @@ conflict with ROS 2. The provided `agr_vla`, `agr_record`, and `agr_finetune`
 commands select that environment automatically.
 
 The complete SmolVLA policy is downloaded the first time it is used. Examples
-that call an online AI service require your own API key. The default PyTorch
-installation uses the CPU; CUDA and GPU drivers are not installed.
+that call an online AI service require your own API key. The installer picks the
+PyTorch build from `nvidia-smi`: `cu128` for compute capability 7.0 to 12.0 with a
+CUDA 12.8+ driver, `cu126` for 5.0 to 9.0 with a CUDA 12.6+ driver, and the CPU
+build otherwise or when there is no NVIDIA driver. It does not install GPU
+drivers; install the NVIDIA driver first if you want the CUDA build. To choose
+yourself, run `AGR_TORCH_BUILD=cpu ./install.sh` (or `cu126`, `cu128`).
+`./install.sh --check` prints the installed build and whether CUDA is available.
 
 ## If something fails
 
